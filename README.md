@@ -31,7 +31,6 @@ Gradient descent is an iterative optimization method that updates model paramete
 
 In this writeup, we will implement gradient descent from scratch and demonstrate it on regression problems, showing how iterative refinement can replace direct solutions in high‑dimensional, nonlinear cases.
 
-
 ## Installation
 
 ## API
