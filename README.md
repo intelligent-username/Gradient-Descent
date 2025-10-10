@@ -21,7 +21,7 @@ TODO:
     - [Batch Gradient Descent (full dataset)](#batch-gradient-descent-full-dataset)
     - [Stochastic Gradient Descent](#stochastic-gradient-descent)
     - [Mini-Batch Gradient Descent](#mini-batch-gradient-descent)
-  - [Additional Optimizations](#additional-optimizations)
+  - [Additional Techniques](#additional-techniques)
     - [Learning Rates](#learning-rates)
       - [1. Fixed](#1-fixed)
       - [2. Scheduled](#2-scheduled)
@@ -117,7 +117,7 @@ Today's topic will be the third components, as this is GD-specific.
 
 This is the most 'vanilla' form of gradient descent. In this method, we have *some* loss function who's gradient changes depending on the parameters, $\theta$ that are passed into it.
 
-We start off the gradient descent by choosing the initial parameters, $w_0$, either randomly or heuristically.
+We start off the gradient descent by choosing the initial parameters, $w_0$, either randomly or heuristically. For convex problems, initial parameters parameters can start anywhere because the Loss will converge anyway, but otherwise, they should be chosen carefully.
 
 Then, we compute the gradient of the loss function at these parameters, $\nabla L(w_0)$:
 
@@ -138,11 +138,12 @@ Finally, we take a step in the opposite direction of the gradient, scaled by the
 
 We repeat this process with the newly attained parameter until one of the [stopping conditions](#stopping-conditions) is met.
 
-Since Batch Gradient Descent computes the entire dataset through the gradient, it is very stable (a single update uses an entire epoch). However, it is also relatively slow. In fact, it's often even slower than finding the analytic solution (if it exists).
+Since Batch Gradient Descent computes the entire dataset through the gradient, it is very stable (a single update uses an entire epoch). However, it is also relatively slow. Oftentimes, it's even slower than finding the analytic solution (if it exists).
 
 ### Stochastic Gradient Descent
 
-Stochastic Gradient Descent is identical to Batch Gradient Descent mathematically, but, instead of computing the gradient over the entire dataset, which takes a total of $O(m)$ per update, we compute it over a single data point (randomly selected, hence the *stochasticity*, without replacement). This dramatically reduces the computation time to $O(1)$. The model converges a lot more quickly in terms of raw time, but takes more iterations to do so. Because we need more iterations, the batch count will also increase. Also, since we are sampling randomly, we will likely have a lot of noise, which makes the fit the final model weaker. This is actually a good thing, since it curbs overfitting. However, the noise can also make convergence more erratic, and it may oscillate around the minimum rather than settling down.
+Stochastic Gradient Descent is identical to Batch Gradient Descent mathematically, but, instead of computing the gradient over the entire dataset, which takes a total of $O(m)$ per update, we compute it over a single data point (randomly selected (hence the *stochasticity*) without replacement). This dramatically reduces the computation time to $O(1)$.
+The model converges a lot more quickly in terms of raw time, but takes more iterations to do so. Because we need more iterations, the batch count will also increase. Also, since we are sampling randomly, we will likely have a lot of noise, which makes the fit the final model weaker. This is actually a good thing, since it curbs overfitting. However, the noise can also make convergence more erratic, and it may oscillate around the minimum rather than settling down.
 
 ### Mini-Batch Gradient Descent
 
@@ -153,92 +154,141 @@ Each update will take $O(s)$ time, and create $O(m/s)$ updates per epoch. This i
 
 ---
 
-## Additional Optimizations
+## Additional Techniques
 
-The above variations use the basic gradient descent update rule but differ in their approach in calculating the loss's gradient by changing the batch size. The following techniques, however, change the update rule itself to improve convergence, stability, or generalization. They can be used in tandem with any of the above batch size strategies to create beautiful, hybrid algorithms.
+The above variations use the same update rule but change how the loss's gradient is calculated by changing the batch size. The following techniques change the update rule itself. They can be used in tandem with any of the above batch size strategies to create beautiful, hybrid algorithms.
 
 ---
 
 ### Learning Rates
 
-The learning rate, $\eta$, which controls how big of a step we take in the direction of the negative gradient during each update. There are three main types of learning rates.
+The learning rate, $\eta$, controls how big of a step we take in the direction of the negative gradient during each update. There are three main types of learning rates.
 
 #### 1. Fixed
 
-The simplest option is to set $\eta$ to some empirically-derived constant that seems to generally work well. However, this is not always optimal, as there is no real way to find an optimized universal learning rate. Often, experimenting with learning rates takes so blind much trial-and-error that it's not worth the effort.
+The simplest option is to set $\eta$ to some empirically-derived constant that seems to generally work well. However, this is not always optimal, as there is no real way to find an optimized universal learning rate. If the learning rate happens to be too high, the model will never converge, and, if it's too low, it will take too long. Often, experimenting with learning rates takes so much trial-and-error that it's not worth the effort.
 
 #### 2. Scheduled
 
 Scheduled learning rates start with some initial learning rate $\eta_0$ and then decay it over time according to some schedule. Common schedules include:
 
-- **Step Decay**: Reduce the learning rate by a factor every $k$ epochs.
+- **Step Decay**: Reduce the learning rate by a some scalar factor $\gamma \in (0,1)$ every $k$ epochs.
   
   $$
-  \eta_i = \eta_0 \cdot \text{drop}^{\lfloor i / k \rfloor}
+  \eta_k = \eta_0 \cdot \gamma^{\lfloor t / k \rfloor}
   $$
+
+The constant $t$ sets the decay time scale.
+
 - **Exponential Decay**: Continuously decay the learning rate exponentially.
 
   $$
-  \eta_i = \eta_0 \cdot e^{-\text{decay} \cdot i}
-  $$
-- **Inverse Time Decay**: Decay the learning rate inversely proportional to the epoch number.
-  $$
-  \eta_i = \frac{\eta_0}{1 + \text{decay} \cdot i}
+  \eta_k = \eta_0 \cdot \gamma^{-\lambda k}
   $$
 
-Scheduled rates/formulas also require some 'empirical' tuning, but they are more consistent and convergent as loss functions tend to flatten out anyway.
+- **Inverse Time Decay**: Decay the learning rate inversely proportionally to the epoch number.
+  $$
+  \eta_k = \frac{\eta_0}{1 + \gamma k}
+  $$
+
+Scheduled rates/formulas also require empirical tuning for $\gamma$ and $\lambda$, but they are more consistent and convergent as loss functions tend to flatten out near a minimum anyway.
 
 #### 3. Adaptive
 
-Now, these are the real optimizations. Adaptive learning rates adjust $\eta$ based on the behavior of the current loss function at the current iteration. This means that, with a 'strange' enough loss surface, the learning rate can go down, then back up, etc. until the point of convergence.
+Now, these are the real optimizations. Adaptive learning rates adjust $\eta$ based on the current behaviour of the loss function's gradient. This means that, with a 'strange' enough loss surface, the learning rate can go down, then back up, etc. and continue oscillating until convergence is reached.
 
 ##### Newton's Method
 
-Newton's Method uses the second-order derivative (Hessian) to find the optimal learning rate. It can converge faster than first-order methods but is computationally expensive. It is written as:
+Based on Newton's root-finding technique, this method uses the second-order derivative (Hessian) to find the optimal learning rate. It can converge faster than first-order methods but is computationally expensive. It is written as:
 
 $$
-\eta_i = -\frac{H^{-1} \nabla f(x_i)}{1 + \lambda \cdot i}
+\eta_{i+1} = \eta_i - H^{-1} \nabla f(x_i)
+$$
+
+If we want to dampen the effects of the Hessian, we can add a decay term, $\lambda$, that, for example, updates after every batch:
+
+$$
+\eta_{i+1} = \eta_i - (H+\lambda_k I)^{-1} \nabla f(x_i)
 $$
 
 Although this method is highly accurate and mathematically elegant, it tends to be avoided due to the sheer cost of calculating, inverting, and transposing Hessians.
 
 ##### Adagrad
 
+In some cases, different parameters need to be adjusted at different rates. For example, in natural language processing, some words are more common than others. We want to adjust the learning rate for each parameter based on how frequently it is updated.
+
 In Adagrad, the learning rate is adjusted in proportion with the momentum of the gradient of the loss function. The general formula is:
 
 $$
-\eta_i = \frac{\eta_0}{\sqrt{G_{ii}} + \epsilon}
+\eta_{t+1} = \frac{\eta_t}{\sqrt{G_{ti}} + \epsilon}
 $$
 
 Where
 
-- $G_{ii}$ is the sum of the squares of the gradients w.r.t. parameter $i$ up to iteration $i$.
-- $\epsilon$ is a small constant to prevent division by zero.
+- The new learning rate is $\eta_{t+1}$.
+- $G_{ii}$ is the sum of the squares of the gradients w.r.t. parameter $i$ up to the iteration at time $t$.
+- $\epsilon$ is a constant to prevent division by zero (or reduce the impact of gradients).
 - $\eta_0$ is the initial learning rate.
+
+The only problem with Adagrad is that it increases monotonically, which can lead to the gradient shrinking too quickly and staying small permanently, thereby preventing further learning.
 
 ##### RMSProp
 
-RMSProp is an improvement on Adagrad that uses the moving average isntead of the sum of squares. The formula is:
+RMSProp fixes the shortcomings of Adagrad by using the exponentially weighted moving average, $E\left[g^2\right]$, of the squared gradients instead of the generic sum of squares.
+
+The formula is:
 
 $$
-\eta_i = \frac{\eta_0}{\sqrt{G_ [g^2]_t} + \epsilon}
+\eta_{t+1} = \frac{\eta_t}{\sqrt{E\left[g^2\right]_t} + \epsilon}
 $$
 
 ##### Adam
 
-Adam's method builds on RMSProp but also makes use of momentum.
+Adam's method is the culmination of all of these adjustment methods. It creates parameter-specific learning rates that are adapted based on the first and second moments of the gradients. It then makes use of our next technique, momentum, to smooth out the updates.
 
 $$
-m_t = \beta_1 m_{t-1} + (1 - \beta_1) \nabla f(x_{t-1})
+\eta_{t+1} = (\eta_t \hat{m}_t) \cdot \frac{1}{\sqrt{\hat{v}_t} + \epsilon}
 $$
 
-$$
-v_t = \beta_2 v_{t-1} + (1 - \beta_2) (\nabla f(x_{t-1}))^2
-$$
+Here, $m$ is the 'momentum' and $v$ is the 'velocity'. We multiply by the 'momentum' to move in the general direction of the change in gradients. Then, we divide by the 'velocity' in order to normalize the step size, scaling updates down for parameters with consistently large gradients and up for sparse or small-gradient parameters.
+
+Velocity is also known as the second moment (the uncentered variance), and momentum is also known as the first moment (the mean).
+
+Where:
 
 $$
-\eta_t = \frac{\eta_0}{\sqrt{v_t} + \epsilon}
+m_t = \beta_1 m_{t-1} + (1 - \beta_1)g_t
 $$
+
+With $\beta_1$ controlling how much 'history' of momentum we retain.
+
+$$
+v_t = \beta_2 v_{t-1} + (1 - \beta_2)g_t^2
+$$
+
+With $\beta_2$ controlling how much 'history' of velocity we retain. The greater $\beta_2$ is, the 'smoother' the adjustments, as recent gradients become less significant. Note that this is the same technique as used in RMSProp.
+
+$$
+g_t = \nabla f(x_{t-1})
+$$
+
+Note that both $m_t$ and $v_t$ are initialized to zero vectors.
+
+Sometimes, if we want to be extra efficient, we adjust the bias of the $m_t$ and $v_t$, as their initialization at zero skews them downwards, making them inefficient early on. In this case, everywhere we see the variables $m_t$ and $v_t$, we replace them with $\hat{m}_t$ and $\hat{v}_t$, respectively, with:
+
+$$
+m_t = \frac{m_t}{1 - \beta_1^t}
+$$
+
+and
+
+$$
+v_t = \frac{v_t}{1 - \beta_2^t}
+$$
+
+\*Note that this bias correction becomes negligible as $t$ increases. This is only a small optimization and is mostly only visible in the first few iterations, so it may be neglected for the sake of saving compute time.
+
+Also, we may occasionally reset our two moments to zero. For example, if the parameters start to oscillate or get stuck, or if the learning rate changes too drastically.
 
 ---
 
