@@ -1,6 +1,7 @@
 # Gradient Descent
 
 🚧In Progress🚧
+
 TODO:
 
 - Finish the rest of the writeup
@@ -172,7 +173,7 @@ The simplest option is to set $\eta$ to some empirically-derived constant that s
 
 Scheduled learning rates start with some initial learning rate $\eta_0$ and then decay it over time according to some schedule. Common schedules include:
 
-- **Step Decay**: Reduce the learning rate by a some scalar factor $\gamma \in (0,1)$ every $k$ epochs.
+- **Step Decay**: Reduce the learning rate linearly by $\gamma \in (0,1)$ every $k$ epochs.
   
   $$
   \eta_k = \eta_0 \cdot \gamma^{\lfloor t / k \rfloor}
@@ -180,11 +181,13 @@ Scheduled learning rates start with some initial learning rate $\eta_0$ and then
 
 The constant $t$ sets the decay time scale.
 
-- **Exponential Decay**: Continuously decay the learning rate exponentially.
+- **Exponential Decay**: Decay the learning rate exponentially.
 
   $$
   \eta_k = \eta_0 \cdot \gamma^{-\lambda k}
   $$
+
+With $\lambda$ controlling the rate of decay.
 
 - **Inverse Time Decay**: Decay the learning rate inversely proportionally to the epoch number.
   $$
@@ -294,34 +297,125 @@ Also, we may occasionally reset our two moments to zero. For example, if the par
 
 ### Momentum
 
+Momentum updates the gradient algorithm by using the trajectory from previous steps. They only incorporate the momentum of the gradients, rather than the gradients themselves. The two main types of momentum are as follows.
+
 #### Polyak Momentum
 
+This is the classical momentum method.
+
+$$
+w_{t+1} = w_{t} - \eta v_t
+$$
+
+Where: $v_t = \beta v_{t-1} + (1-\beta) g_t \ \ \ \text{and} \quad g_t = \nabla_w L(w_t)$
+
 #### Nesterov Acceleration
+
+Like classical momentum, except the velocity is updated with lookahead.
+
+$$
+w_{t+1} = w_t - \eta v_t
+$$
+
+With $v_t = \beta v_{t-1} + (1-\beta) \nabla_w L(w_t - \eta \beta v_{t-1})$
 
 ---
 
 ### Regularization
 
+The biggest problem with gradient descent is that it's *too accurate* on the training data. As a result, it doesn't generalize well to new inputs. This happens because the models grow so complex that they exactly pass as closely through as many points as possible, including the noise.
+
+As a reminder, when we perform gradient descent, we do so on the loss function, which is our tool for measuring the difference between our predicted values and the actual values, i.e. accuracy. Different loss functions are applied in different contexts. When we find the absolute minimum of the loss function, we create something that is as close to the training data as possible, which may be of no use, given that our samples are unlikely to be perfectly representative of the population.
+
+This is called overfitting. Regularization techniques add a penalty to the loss for function complexity (like large weights or high-degree polynomials).
+
+For each type of regularization below, we will use a generic $L$ to refer to an un-regularized loss function, and $L'$ to refer to it's regularized version. Once again, keep in mind that $w$ denotes the weights and $\lambda$ being a constant that controls the *strength* of the given regularization. Thus, when performing gradient descent on a set of parameters $w$ with the set of data points $X$, we will instead differentiate and optimize $L'$.
+
+Although this topic would require a whole writeup of its own, it's important to at least understand how the loss functinos can be optimized and integrate the most relevant versions into this project.
+
 #### L1 Regularization (Lasso)
+
+$$
+L'(w) = L(w) + \lambda \sum_{j=1}^{N}(|w_j|)
+$$
+
+In L1 Regularization, we modify the loss function by adding the values of the parameters as arguments. They now contribute to the loss. Since we are minimizing loss, the gradient descent will be encouraged to find a good balance between the data fit and model complexity.
+
+Some weights even go to or near zero, which gives us free feature selection and simplifies the final deployment model.
+
+Note that, when differentiating the absolute value function, call it $f$, we have:
+
+$$
+\frac{\partial{f}}{\partial{w_j}} =
+\begin{cases}
+-1 &&& \text{if } w_j < 0,
+\\
+1 &&& \text{if } w_j > 0,
+\\
+\text{any value} \in [-1, 1], \text{typically 0} &&& \text{otherwise} \\
+\end{cases}
+$$
 
 #### L2 Regularization (Ridge)
 
+$$
+L'(w) = L(w) + \lambda \sum_{j=1}^{N}{w_j^2}
+$$
+
+The penalty of L2 Regularization is the sum of the squares of the parameters. Once again, this encourages smaller weights, and pushes the model to predict the median rather than the mean, which is more robust to outliers.
+
+Since the terms are squared, large terms grow quadratically, thus being the primary target when minimizing the loss. If all weights in the model are $<=1$, this may cause issues, as the contribution from each term will be even smaller when squared.
+
 #### Elastic Net Regularization
+
+$$
+L'(w) = L(w) + \lambda \sum_{i=1}^{N}{|w_i|} + (1 - \lambda) \sum_{j=0}^{N}{w_i}
+$$
+
+Elastic regularization is literally the L1 and L2 regularization combined. It adds both the squares and the absolute values of the weights to the loss function. It performs both feature selection and weight decay.
+
+With $\lambda \in [0, 1]$.
+
+We may also want to have two *separate* scalars, not necessairly within $[0,1]$ to make the regularization more extreme.
 
 ---
 
 ## Convergence Criteria
 
+Convergence occurs when the infimum or minimum  of the Loss function is very closely approached:
+
+$$
+\lim_{t -> 10} |L_t - L_{t-1}| = 0
+$$
+
+Or, more clearly:
+
+$$
+\forall \epsilon, \ \exists \delta, \zeta \ \ s.t. \ ||w_{t} - w_{t-1}|| < \delta \implies ||\nabla{L(W)_t}|| < \epsilon \ \lor \ |L(w_{t}) - L_(w_t-1)| < \zeta
+$$
+
 ---
 
 ## Stopping Conditions
+
+We want to stop when the model has converged. This can be expressed in a similar way to the criteria above, with hyperparameters $\delta$, $\epsilon$, and $\zeta$. When running the algorithm, we can check if any of the following conditions are met::
+
+- $|\nabla_w L(w_t)| < \epsilon  \ \  \ \lor$
+- $|L(w_t) - L(w_{t-1})| < \zeta$  $\ \ \lor$
+- $||w_t - w_{t-1}|| < \delta$  $\ \ \lor$
+- $t >= N$ (max iterations)
+- $k >= M$ (max epochs)
+- $\nabla_w L(w_t) < 0$: Validation loss begins to increase
+
+Where $N$, is the maximum number of iterations, $M$ is the maximum number of epochs, and $\epsilon$, $\zeta$, and $\delta$ are small positive thresholds.
 
 ---
 
 ## Limitations
 
-- Can still overfit w/ improper regularization
-- Can get stuck at local minima
+- The effectiveness of gradient desecent depends on hyperparameters, even with automatic tuning.
+- Difficult to maintain numerical stability with high-dimensional data.
+- The parameters may get stuck in local minima around the loss surface.
 
 ---
 
