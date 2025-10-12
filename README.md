@@ -66,7 +66,7 @@ In this writeup, we will implement gradient descent from scratch and demonstrate
 
 ## Math
 
-Suppose you have some loss function $L(\theta)$ that you want to minimize with model parameters $\theta$.
+The math behind gradient descent is very simple. Suppose you have some loss function $L(\theta)$ that you want to minimize with model parameters $\theta$. The function $L$ will create some 'surface', and the point that we are on on that surface is determined by our current 'coordinates' $\theta$. Our goal is to find the global (or at least local) minima of this surface.
 
 The gradient descent algorithm works as follows:
 
@@ -76,31 +76,31 @@ $$
 
 Where:
 
+- $w_{i+1}$ are the updated model parameters after iteration $i$.
 - $w_i$ are the model parameters at iteration $i$ (e.g., weights in linear regression).
 - $\eta$ is the *learning rate*, a small positive scalar that controls the step size. Note, in Newton's method, this is actually the inverse of the Hessian in place of the constant $\eta$, which is more accurate but way more costly.
 - $\nabla L(w_i)$ is the gradient of the loss function at $w_i$, indicating the direction of steepest ascent (by the Cauchy-Schwarz Theorem).
-- The negative sign, is inserted so we move from our current parameters closer to the minimum (also by the Cauchy-Schwarz Theorem).
-- Finally, $w_{i+1}$ are the updated model parameters after iteration $i$.
+- Subtracting the gradient moves us towards the minimum.
 
 This is the same as iterative minimization. We continue doing this until the change in loss, $\Delta L$ between iterations is smaller than some predefined threshold, the change in the gradient is below some threshold $\delta$, or until we run out of iterations. More formally, it is written with the condition:
 
 $$
-|L(w_{i+1}) - L(w_i)| < \epsilon
+|L(w_{i+1}) - L(w_i)| < \delta
 \\
 \lor
 \\
-||\nabla L(w_{i+1})|| < \delta
+||\nabla L(w_{i+1})|| < \epsilon
 \\
 \lor
 \\
 i >= N
 $$
+  
+(Where N is the maximum number of iterations, and $\epsilon$ and $\delta$ are small positive thresholds. Other conditions will be discussed [later](#stopping-conditions)).
 
-(Where N is the maximum number of iterations, and $\epsilon$ and $\delta$ are small positive thresholds.)
+Thus, when changing these parameters around, the value of the learning rate and the method of calculating the loss gradient are the only things that are really tunable. The pause conditions are important but become less and less significant as they shrink to zero. It is important to intelligently pick a learning rate: too small and the model will be slow (and simply never get close enough to the minimum), too large and the model will diverge (overshoot the minimum and oscillate out of control). Later in this writeup, we will discuss the different methods for customizing all of these components.
 
-Hence, the choice of learning rate is the only thing that can be tuned. The other parameters, if low enough, will affect the final result all that much. It is important to intelligently pick a learning rate: too small and the model will be slow (and simply never get close enough to the minimum), too large and the model will diverge (overshoot the minimum and oscillate out of control). The two most common strategies for fixing this are either fine-tuning a fixed learning rate after some trial-and-error, or using adjusting the learning rate dynamically during training (e.g., learning rate schedules or adaptive methods like Adam, more on that later).
-
-Note that, often times, it is not enough to simply perform gradient descent. We will often times have separate training, validation, and testing sets. Also, we will have to pass through the data multiple times (epochs) to get a good fit. Finally, we will often times have to regularize the model to prevent overfitting.
+Note that, usually, it is not enough to simply perform gradient descent. We will likely need separate training, validation, and testing sets. Also, we will have to pass through the data multiple times (epochs) to get a good fit. Finally, we will often times have to regularize the model to prevent overfitting.
 
 ---
 
@@ -116,14 +116,14 @@ Today's topic will be the third components, as this is GD-specific.
 
 ### Batch Gradient Descent (full dataset)
 
-This is the most 'vanilla' form of gradient descent. In this method, we have *some* loss function who's gradient changes depending on the parameters, $\theta$ that are passed into it.
+This is the most 'vanilla' form of gradient descent. In this method, we have *some* loss function whose gradient changes depending on the parameters, $\theta$ that are passed into it.
 
 We start off the gradient descent by choosing the initial parameters, $w_0$, either randomly or heuristically. For convex problems, initial parameters parameters can start anywhere because the Loss will converge anyway, but otherwise, they should be chosen carefully.
 
 Then, we compute the gradient of the loss function at these parameters, $\nabla L(w_0)$:
 
 $$
-\nabla L(w_0) = \frac{1}{m} \sum_{i=1}^{m} \nabla_\theta l(f(x_i; w_0), y_i)
+\nabla L(w_0) = \frac{1}{N} \sum_{i=1}^{N} \nabla_w l(f(x_i; w_0), y_i)
 $$
 
 Where:
@@ -205,13 +205,13 @@ Now, these are the real optimizations. Adaptive learning rates adjust $\eta$ bas
 Based on Newton's root-finding technique, this method uses the second-order derivative (Hessian) to find the optimal learning rate. It can converge faster than first-order methods but is computationally expensive. It is written as:
 
 $$
-\eta_{i+1} = \eta_i - H^{-1} \nabla f(x_i)
+w_{i+1} = w_i - H^{-1} \nabla f(x_i)
 $$
 
 If we want to dampen the effects of the Hessian, we can add a decay term, $\lambda$, that, for example, updates after every batch:
 
 $$
-\eta_{i+1} = \eta_i - (H+\lambda_k I)^{-1} \nabla f(x_i)
+w_{i+1} = w_i - (H+\lambda_k I)^{-1} \nabla f(x_i)
 $$
 
 Although this method is highly accurate and mathematically elegant, it tends to be avoided due to the sheer cost of calculating, inverting, and transposing Hessians.
@@ -223,13 +223,13 @@ In some cases, different parameters need to be adjusted at different rates. For 
 In Adagrad, the learning rate is adjusted in proportion with the momentum of the gradient of the loss function. The general formula is:
 
 $$
-\eta_{t+1} = \frac{\eta_t}{\sqrt{G_{ti}} + \epsilon}
+\eta_{t+1} = \frac{\eta_0}{\sqrt{G_{ti}} + \epsilon}
 $$
 
 Where
 
 - The new learning rate is $\eta_{t+1}$.
-- $G_{ii}$ is the sum of the squares of the gradients w.r.t. parameter $i$ up to the iteration at time $t$.
+- $G_{ii}$ is the sum of the squares of the gradients w.r.t. parameter $i$ up to the iteration at time $t$, written as $G_{t} = \sum_{j=1}^{t} \nabla_{w_i} L(w_j)^2$.
 - $\epsilon$ is a constant to prevent division by zero (or reduce the impact of gradients).
 - $\eta_0$ is the initial learning rate.
 
@@ -242,7 +242,7 @@ RMSProp fixes the shortcomings of Adagrad by using the exponentially weighted mo
 The formula is:
 
 $$
-\eta_{t+1} = \frac{\eta_t}{\sqrt{E\left[g^2\right]_t} + \epsilon}
+\eta_{t+1} = \frac{\eta_0}{\sqrt{E\left[g^2\right]_t} + \epsilon}
 $$
 
 ##### Adam
@@ -250,7 +250,7 @@ $$
 Adam's method is the culmination of all of these adjustment methods. It creates parameter-specific learning rates that are adapted based on the first and second moments of the gradients. It then makes use of our next technique, momentum, to smooth out the updates.
 
 $$
-\eta_{t+1} = (\eta_t \hat{m}_t) \cdot \frac{1}{\sqrt{\hat{v}_t} + \epsilon}
+\eta_{t+1} = (\eta_0) \cdot \frac{\hat{m}_{t,i}}{\sqrt{\hat{v}_t} + \epsilon}
 $$
 
 Here, $m$ is the 'momentum' and $v$ is the 'velocity'. We multiply by the 'momentum' to move in the general direction of the change in gradients. Then, we divide by the 'velocity' in order to normalize the step size, scaling updates down for parameters with consistently large gradients and up for sparse or small-gradient parameters.
@@ -260,13 +260,13 @@ Velocity is also known as the second moment (the uncentered variance), and momen
 Where:
 
 $$
-m_t = \beta_1 m_{t-1} + (1 - \beta_1)g_t
+m_{t,i} = \beta_1 m_{(t-1),i} + (1 - \beta_1)g_{t,i}
 $$
 
 With $\beta_1$ controlling how much 'history' of momentum we retain.
 
 $$
-v_t = \beta_2 v_{t-1} + (1 - \beta_2)g_t^2
+v_{t,i} = \beta_2 v_{(t-1),i} + (1 - \beta_2)g_{t,i}^2
 $$
 
 With $\beta_2$ controlling how much 'history' of velocity we retain. The greater $\beta_2$ is, the 'smoother' the adjustments, as recent gradients become less significant. Note that this is the same technique as used in RMSProp.
@@ -280,13 +280,13 @@ Note that both $m_t$ and $v_t$ are initialized to zero vectors.
 Sometimes, if we want to be extra efficient, we adjust the bias of the $m_t$ and $v_t$, as their initialization at zero skews them downwards, making them inefficient early on. In this case, everywhere we see the variables $m_t$ and $v_t$, we replace them with $\hat{m}_t$ and $\hat{v}_t$, respectively, with:
 
 $$
-m_t = \frac{m_t}{1 - \beta_1^t}
+\hat{m_t} = \frac{m_t}{1 - \beta_1^t}
 $$
 
 and
 
 $$
-v_t = \frac{v_t}{1 - \beta_2^t}
+\hat{v_t} = \frac{v_t}{1 - \beta_2^t}
 $$
 
 \*Note that this bias correction becomes negligible as $t$ increases. This is only a small optimization and is mostly only visible in the first few iterations, so it may be neglected for the sake of saving compute time.
@@ -369,7 +369,7 @@ Since the terms are squared, large terms grow quadratically, thus being the prim
 #### Elastic Net Regularization
 
 $$
-L'(w) = L(w) + \lambda \sum_{i=1}^{N}{|w_i|} + (1 - \lambda) \sum_{j=0}^{N}{w_i}
+L'(w) = L(w) + \lambda \sum_{i=1}^{N}{|w_i|} + (1 - \lambda) \sum_{j=0}^{N}{w_i}^2
 $$
 
 Elastic regularization is literally the L1 and L2 regularization combined. It adds both the squares and the absolute values of the weights to the loss function. It performs both feature selection and weight decay.
@@ -385,7 +385,7 @@ We may also want to have two *separate* scalars, not necessairly within $[0,1]$ 
 Convergence occurs when the infimum or minimum  of the Loss function is very closely approached:
 
 $$
-\lim_{t -> 10} |L_t - L_{t-1}| = 0
+\lim_{t \to \infty} |L_{t} - L_{t-1}| = 0
 $$
 
 Or, more clearly:
@@ -400,12 +400,16 @@ $$
 
 We want to stop when the model has converged. This can be expressed in a similar way to the criteria above, with hyperparameters $\delta$, $\epsilon$, and $\zeta$. When running the algorithm, we can check if any of the following conditions are met::
 
-- $|\nabla_w L(w_t)| < \epsilon  \ \  \ \lor$
-- $|L(w_t) - L(w_{t-1})| < \zeta$  $\ \ \lor$
-- $||w_t - w_{t-1}|| < \delta$  $\ \ \lor$
-- $t >= N$ (max iterations)
-- $k >= M$ (max epochs)
-- $\nabla_w L(w_t) < 0$: Validation loss begins to increase
+$$
+\begin{aligned}
+&||\nabla_w L(w_t)|| < \epsilon  &&\text{(gradient near zero)} \\
+&|L(w_t) - L(w_{t-1})| < \zeta  &&\text{(loss no longer improving)} \\
+&||w_t - w_{t-1}|| < \delta  &&\text{(weights no longer changing)} \\
+&t \ge N &&\text{(max iterations reached)} \\
+&k \ge M &&\text{(max epochs reached)} \\
+&L_{\text{val}}(t) > L_{\text{val}}(t-1) && \ \text{(validation loss rising → early stop)}
+\end{aligned}
+$$
 
 Where $N$, is the maximum number of iterations, $M$ is the maximum number of epochs, and $\epsilon$, $\zeta$, and $\delta$ are small positive thresholds.
 
@@ -436,6 +440,8 @@ Coming soon yoooooooooooooooooooo
 2. Install dependencies (?) (TBD)
 
 3. Use like so (TBM)
+
+Write this when implementation is complete.
 
 ## License
 
