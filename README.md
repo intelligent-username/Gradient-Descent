@@ -1,12 +1,12 @@
 # Gradient Descent
 
-🚧In Progress🚧
+In Progress
 
 TODO:
 
-- Finish the rest of the writeup
-- Create the implementations in C++.
-- Then, using these implementations, improve the writeup with empirical results.
+- Finish implementations. Add all variants/optimizers, ensure universal functionality through main.
+- Add demos and visualizations FROM implementations.
+- Testing & validation.
 
 ![Cover](cover.jpg)
 
@@ -427,22 +427,54 @@ Where $N$, is the maximum number of iterations, $M$ is the maximum number of epo
 
 ### Prerequisites
 
-- C++, etc.
-- Compiler
-- IDE
+- C++ compiler (g++, clang++, or MSVC)
+- CMake (version 3.10 or higher)
+- IDE or text editor of your choice (e.g., VSCode)
 
 ### Environment Setup
 
-Coming soon yoooooooooooooooooooo
+  1. Clone the project:
 
-1. Clone the project
+    ```bash
+    git clone <repository_url>
+    cd <repository_folder>
+    ````
 
-2. Install dependencies (?) (TBD)
+  2. Create a build directory and enter it:
 
-3. Use like so (TBM)
+    ```bash
+    mkdir build
+    cd build
+    ```
 
-Write this when implementation is complete.
+  3. Run CMake to configure the project:
 
+    ```bash
+    cmake ..
+    ```
+
+  4. Compile the project:
+
+    ```bash
+    make        # Linux/WSL/MinGW
+    ```
+    or
+    ```bash
+    cmake --build .  # cross-platform alternative
+    ```
+
+  5. Run the executable:
+
+    ```bash
+    ./gradient_descent
+    ```
+
+Side notes:
+
+- Eigen is included in `include/` and requires no separate installation.
+- All source code is in `src/`, headers in `include/`.
+- Default settings use Adam optimizer with MSE loss. Other parameters can be adjusted in the code or via command-line arguments once implemented.
+  
 ## License
 
 Distributed under the [MIT License](LICENSE).

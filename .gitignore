@@ -1,0 +1,22 @@
+# Random Cache Stuff
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Settings etc.
+.vscode/
+.idea/
+
+# Project's compiled files
+*.o
+*.obj
+*.so
+*.a
+*.lib
+*.dll
+*.exe
+
+# Misc C stuff
+CMakeCache.txt
+CMakeFiles/
+

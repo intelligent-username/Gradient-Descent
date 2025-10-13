@@ -1,36 +1,26 @@
-# CMake configuration for Gradient Descent project
-
-cmake_minimum_required(VERSION 3.16)
-
+cmake_minimum_required(VERSION 3.10)
 project(GradientDescent LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_library(gr_lib
-	src/gradient_descent.cpp
-	src/optimizers.cpp
-	src/stop_conditions.cpp
-	src/utils.cpp
+include_directories(${CMAKE_SOURCE_DIR}/include)
+
+# Find Eigen
+find_package(Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})
+
+# Library
+add_library(gradient_descent STATIC
+    src/tensor.cpp
+    src/gradient_descent.cpp
+    src/loss.cpp
+    src/stop_criteria.cpp
 )
+target_include_directories(gradient_descent PUBLIC include)
+target_link_libraries(gradient_descent Eigen3::Eigen)
 
-target_include_directories(gr_lib
-	PUBLIC
-		${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-add_executable(demo_gd demos/demo_gd.cpp)
-target_link_libraries(demo_gd PRIVATE gr_lib)
-
-add_executable(demo_adagrad demos/demo_adagrad.cpp)
-target_link_libraries(demo_adagrad PRIVATE gr_lib)
-
-add_executable(demo_rmsprop demos/demo_rmsprop.cpp)
-target_link_libraries(demo_rmsprop PRIVATE gr_lib)
-
-add_executable(demo_adam demos/demo_adam.cpp)
-target_link_libraries(demo_adam PRIVATE gr_lib)
-
-add_executable(test_all tests/test_all.cpp)
-target_link_libraries(test_all PRIVATE gr_lib)
+# Demo executable
+add_executable(demo src/main.cpp)
+target_link_libraries(demo gradient_descent)
