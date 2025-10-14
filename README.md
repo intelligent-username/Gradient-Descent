@@ -27,10 +27,12 @@ TODO:
       - [1. Fixed](#1-fixed)
       - [2. Scheduled](#2-scheduled)
       - [3. Adaptive](#3-adaptive)
-        - [Newton's Method](#newtons-method)
-        - [Adagrad](#adagrad)
-        - [RMSProp](#rmsprop)
-        - [Adam](#adam)
+        - [**Newton's Method**](#newtons-method)
+        - [**Adagrad**](#adagrad)
+        - [**RMSProp**](#rmsprop)
+        - [**Adam**](#adam)
+        - [**Nadam**](#nadam)
+        - [**AMSGrad**](#amsgrad)
     - [Momentum](#momentum)
       - [Polyak Momentum](#polyak-momentum)
       - [Nesterov Acceleration](#nesterov-acceleration)
@@ -165,11 +167,11 @@ The above variations use the same update rule but change how the loss's gradient
 
 The learning rate, $\eta$, controls how big of a step we take in the direction of the negative gradient during each update. There are three main types of learning rates.
 
-#### 1. Fixed
+#### <u>1. Fixed</u>
 
 The simplest option is to set $\eta$ to some empirically-derived constant that seems to generally work well. However, this is not always optimal, as there is no real way to find an optimized universal learning rate. If the learning rate happens to be too high, the model will never converge, and, if it's too low, it will take too long. Often, experimenting with learning rates takes so much trial-and-error that it's not worth the effort.
 
-#### 2. Scheduled
+#### <u>2. Scheduled</u>
 
 Scheduled learning rates start with some initial learning rate $\eta_0$ and then decay it over time according to some schedule. Common schedules include:
 
@@ -196,13 +198,13 @@ With $\lambda$ controlling the rate of decay.
 
 Scheduled rates/formulas also require empirical tuning for $\gamma$ and $\lambda$, but they are more consistent and convergent as loss functions tend to flatten out near a minimum anyway.
 
-#### 3. Adaptive
+#### 3. <u>Adaptive</u>
 
-Now, these are the real optimizations. Adaptive learning rates adjust $\eta$ based on the current behaviour of the loss function's gradient. This means that, with a 'strange' enough loss surface, the learning rate can go down, then back up, etc. and continue oscillating until convergence is reached.
+These are the real optimizations. Adaptive learning rates adjust not just the learning rate but the learning method based on the current behaviour of the loss function's gradient. This means that, with a 'strange' enough loss surface, the learning rate can go down, then back up, etc. and continue oscillating until convergence is reached. Note that the notation I use isn't very 'canonical', as it is designed to make the math behind the implementation clearer. It is still correct.
 
-##### Newton's Method
+##### **Newton's Method**
 
-Based on Newton's root-finding technique, this method uses the second-order derivative (Hessian) to find the optimal learning rate. It can converge faster than first-order methods but is computationally expensive. It is written as:
+Based on Newton's root-finding technique, this method uses the second-order derivative (Hessian) to find the optimal learning rate, and substitutes it as the updated learning rate for the canonical gradient descent update. It can converge faster than first-order methods but is computationally expensive. It is written as:
 
 $$
 w_{i+1} = w_i - H^{-1} \nabla f(x_i)
@@ -214,38 +216,49 @@ $$
 w_{i+1} = w_i - (H+\lambda_k I)^{-1} \nabla f(x_i)
 $$
 
-Although this method is highly accurate and mathematically elegant, it tends to be avoided due to the sheer cost of calculating, inverting, and transposing Hessians.
+Although this method is highly accurate and mathematically elegant, it is often avoided due to the sheer cost of calculating, inverting, and transposing  Hessians.
 
-##### Adagrad
+##### **Adagrad**
 
 In some cases, different parameters need to be adjusted at different rates. For example, in natural language processing, some words are more common than others. We want to adjust the learning rate for each parameter based on how frequently it is updated.
 
 In Adagrad, the learning rate is adjusted in proportion with the momentum of the gradient of the loss function. The general formula is:
 
 $$
-\eta_{t+1} = \frac{\eta_0}{\sqrt{G_{ti}} + \epsilon}
+\eta_{t+1} = \frac{\eta_0}{\sqrt{G_{t}} + \epsilon}
 $$
 
 Where
 
 - The new learning rate is $\eta_{t+1}$.
+- $\eta_0$ is constant: the initial learning rate.
 - $G_{ii}$ is the sum of the squares of the gradients w.r.t. parameter $i$ up to the iteration at time $t$, written as $G_{t} = \sum_{j=1}^{t} \nabla_{w_i} L(w_j)^2$.
 - $\epsilon$ is a constant to prevent division by zero (or reduce the impact of gradients).
 - $\eta_0$ is the initial learning rate.
 
 The only problem with Adagrad is that it increases monotonically, which can lead to the gradient shrinking too quickly and staying small permanently, thereby preventing further learning.
 
-##### RMSProp
+##### **RMSProp**
 
 RMSProp fixes the shortcomings of Adagrad by using the exponentially weighted moving average, $E\left[g^2\right]$, of the squared gradients instead of the generic sum of squares.
 
 The formula is:
 
 $$
-\eta_{t+1} = \frac{\eta_0}{\sqrt{E\left[g^2\right]_t} + \epsilon}
+\eta_{t+1} = \frac{\eta_0}{\sqrt{v_t} + \epsilon}
 $$
 
-##### Adam
+Where:
+
+* $v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2$, the exponentially weighted moving average of the squared gradients at iteration $t$. Note that $v_0 = 0$.
+* $g_t = \nabla_w L(w_t)$ is the gradient of the loss function with respect to the parameters $w$ at iteration $t$.
+* $\beta_2 \in [0,1)$ is the decay rate controlling how much history is retained; larger $\beta_2$ gives smoother averages.
+* $1 - \beta_2$ is the weighting applied to the current squared gradient $g_t^2$.
+* $\eta_0$ is the initial learning rate (scalar hyperparameter set by the user).
+* $\epsilon$ is a small constant added to the denominator to prevent division by zero or extremely small step sizes.
+* $\eta_{t+1}$ is the effective per-parameter learning rate applied at iteration $t+1$.
+
+##### **Adam**
 
 Adam's method is the culmination of all of these adjustment methods. It creates parameter-specific learning rates that are adapted based on the first and second moments of the gradients. It then makes use of our next technique, momentum, to smooth out the updates.
 
@@ -292,6 +305,52 @@ $$
 \*Note that this bias correction becomes negligible as $t$ increases. This is only a small optimization and is mostly only visible in the first few iterations, so it may be neglected for the sake of saving compute time.
 
 Also, we may occasionally reset our two moments to zero. For example, if the parameters start to oscillate or get stuck, or if the learning rate changes too drastically.
+
+##### **Nadam**
+
+Nadam combines Adam with Nesterov momentum, modifying the first-moment term to include a lookahead of the gradient. The update rule is:
+
+$$
+w_{t+1} = w_t - \eta_0 \frac{\hat{m}_t^{\text{Nesterov}}}{\sqrt{\hat{v}_t} + \epsilon}
+$$
+
+Where:
+
+* $\hat{m}_t^{\text{Nesterov}} = \frac{\beta_1 \hat{m}_{t-1} + (1 - \beta_1) g_t}{1 - \beta_1^t}$
+* $\hat{v}_t = \frac{v_t}{1 - \beta_2^t}$ is the bias-corrected second moment, with $v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2$.
+* $g_t = \nabla_w L(w_t)$ is the gradient of the loss function w.r.t. parameters at iteration $t$.
+* $m_{t-1}$ is the previous first-moment vector (momentum) initialized to zero at $t=0$.
+* $v_{t-1}$ is the previous second-moment vector (uncentered variance) initialized to zero at $t=0$.
+* $\beta_1 \in [0,1)$ is the decay rate controlling how much past momentum is retained.
+* $\beta_2 \in [0,1)$ is the decay rate controlling how much past squared gradients are retained.
+* $1 - \beta_1$ weights the current gradient contribution to momentum.
+* $1 - \beta_2$ weights the current squared gradient contribution to velocity.
+* $\eta_0$ is the initial learning rate.
+* $\epsilon$ is a small constant to prevent division by zero.
+* $w_{t+1}$ is the updated parameter vector applied at iteration $t+1$.
+
+---
+
+##### **AMSGrad**
+
+AMSGrad is a variant of Adam designed to improve convergence by preventing the adaptive learning rates from increasing. It modifies the second-moment term:
+
+$$
+w_{t+1} = w_t - \eta_0 \frac{\hat{m}_t}{\sqrt{\hat{v}_t^{\text{max}}} + \epsilon}
+$$
+
+Where:
+
+* $\hat{m}*t = \frac{m_t}{1 - \beta_1^t}$ is the bias-corrected first moment, with $m_t = \beta_1 m*{t-1} + (1 - \beta_1) g_t$.
+* $v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2$ is the uncorrected second moment (same as Adam).
+* $\hat{v}*t^{\text{max}} = \max(\hat{v}*{t-1}^{\text{max}}, \hat{v}_t)$ ensures the denominator never decreases.
+* $g_t = \nabla_w L(w_t)$ is the gradient at iteration $t$.
+* $m_{t-1}$ and $v_{t-1}$ are previous first and second moments, initialized to zero at $t=0$.
+* $\beta_1, \beta_2 \in [0,1)$ are decay rates for first and second moments.
+* $1 - \beta_1$ and $1 - \beta_2$ weight the contributions of the current gradient and squared gradient.
+* $\eta_0$ is the initial learning rate.
+* $\epsilon$ prevents division by zero.
+* $w_{t+1}$ is the updated parameter vector at iteration $t+1$.
 
 ---
 
@@ -412,6 +471,8 @@ $$
 $$
 
 Where $N$, is the maximum number of iterations, $M$ is the maximum number of epochs, and $\epsilon$, $\zeta$, and $\delta$ are small positive thresholds.
+
+We may use any combination of these conditions. The first three ensure convergence, while the last three prevent infinite loops and overfitting.
 
 ---
 
