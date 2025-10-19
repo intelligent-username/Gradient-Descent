@@ -8,10 +8,9 @@ using namespace std;
 
 /**
 * Gradient Descent Algorithm
-
-// Mini helpers
-
+*/
 // Universal object to return
+
 struct Result {
     Tensor weights;
     double loss;
@@ -86,10 +85,13 @@ Result gradientDescent(Tensor* w0,
     // Store the gradient of the loss functions
     // Will always be used
 
-    
-
+    auto gradFunc = gradientFinder(lossType);
+    // Valid args: ['MSE', 'MAE', 'Hinge', 'NLL', 'cos']
 
     bool running = true;
+
+    double learningRate = 0.01; // default
+    VectorXd accumulatedSquares = VectorXd::Zero(w.rows()); // Gradient accumulator for Ada, RMS, etc.
 
     while (running) {
 
@@ -118,36 +120,26 @@ Result gradientDescent(Tensor* w0,
         // Compute loss
         currLoss = loss(predictions, y_batch, w);
 
-        // Find how much to subtract (gradient placeholder)
-        Tensor grad = X_batch.transpose() * (predictions - Tensor(y_batch.size(), 1)); // Placeholder for gradient logic
+        // Flatten y_batch into Tensor for arithmetic
+        Tensor y_true(y_batch.size(), 1);
+        for (size_t i = 0; i < y_batch.size(); ++i)
+            y_true.data(i, 0) = y_batch[i]->data(0, 0);
 
-        // Update the weights (simple GD step)
+        // dL/dŷ from precomputed gradient function
+        Tensor gradPred = gradFunc(predictions, y_true);
 
-        if learningRateType != "StepDecay" {
-            // Setting gamma to 0.96
-            // i.e. learning rate shrinks by 5% every 20 epochs.
-            // This is a hyperparameter that can be tuned
+        // ∂L/∂w = Xᵀ * dL/dŷ
+        Tensor grad = X_batch.transpose() * gradPred;
 
-            learningRate = stepDecay(learningRate, 0.96, 20, epoch);
+        learningRate = learningRateCaller(learningRateType, accumulatedSquares, learningRate, epoch, 0.1);
 
-        } else if learningRateType != "ExponentialDecay" {
-            learningRate = 0.01; // Default static learning rate
-        } else if learningRateType != "NR" {
-            learningRate = NR(learningRate, epoch, 0.1);
-        }
-
-
-
-
-        w = w - (grad * learningRate);
+        // This is the only real step, the rest is just setup
+        w = w - (learningRate * grad);
 
         // Update gradient magnitude for stopping condition
         curGrad = grad.norm();
 
-        // And update the stop condition trackers
-
-        // Now that I think about it, this process is very simple.
-
+        // Check the stopping conditions
         if (iteration % 10 == 0) {
             running = (
                 curGrad > minGrad &&

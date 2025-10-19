@@ -1,71 +1,73 @@
-// Helper for computing gradients
-// i.e. plug in weights into a given gradient of a loss function
-
 #include "computer.hpp"
 #include <stdexcept>
 #include <string>
+#include <functional>
 
 using std::invalid_argument;
 using std::string;
+using std::function;
 
-// Compute gradient application given a gradient Tensor and input points Tensor
-// Supports:
-// - scalar gradient (1x1) -> scales points
-// - matrix-matrix product when inner dims match
-// - element-wise product when shapes match exactly
-Tensor computeGradient(const Tensor& gradient, const Tensor& points) {
-    // scalar scaling
-    if (gradient.rows() == 1 && gradient.cols() == 1) {
-        return points * gradient.data(0, 0);
-    }
-
-    // matrix multiplication when feasible
-    if (gradient.cols() == points.rows()) {
-        return Tensor(gradient.data * points.data);
-    }
-
-    // element-wise when same shape
-    if (gradient.rows() == points.rows() && gradient.cols() == points.cols()) {
-        return Tensor(gradient.data.cwiseProduct(points.data));
-    }
-
-    throw invalid_argument("Incompatible tensor shapes for gradient application");
+// computeGradient now evaluates the precomputed gradient at a specific point
+Tensor computeGradient(const function<Tensor(const Tensor&, const Tensor&)>& gradFunc,
+                       const Tensor& predictions,
+                       const Tensor& targets) {
+    return gradFunc(predictions, targets);
 }
 
 
-// Gradient to use for parameter updates
-// Will plug weights into this gradient
-// Might extend to finding custom loss functions in the future
-
-Tensor gradientFinder(const string& lossType) {
+// gradientFinder returns a callable that computes ∂L/∂ŷ for given predictions, targets
+function<Tensor(const Tensor&, const Tensor&)> gradientFinder(const string& lossType) {
     if (lossType == "MSE") {
-        // Placeholder: return scalar 2.0 which often appears in d/dw of MSE
-        Tensor g(1, 1);
-        g.data(0, 0) = 2.0;
-        return g;
-    } else if (lossType == "MAE") {
-        // Placeholder: sign-like scalar 1.0, actual depends on residual sign
-        Tensor g(1, 1);
-        g.data(0, 0) = 1.0;
-        return g;
-    } else if (lossType == "Hinge") {
-        // Placeholder scalar; true gradient depends on margin condition
-        Tensor g(1, 1);
-        g.data(0, 0) = -1.0;
-        return g;
-    } else if (lossType == "NLL") {
-        // Placeholder scalar for negative log-likelihood derivative scale
-        Tensor g(1, 1);
-        g.data(0, 0) = 1.0;
-        return g;
-    } else if (lossType == "cos") {
-        // Placeholder scalar for cosine similarity loss derivative scale
-        Tensor g(1, 1);
-        g.data(0, 0) = -1.0;
-        return g;
-    } else {
-        throw invalid_argument("Unknown loss type: " + lossType);
+        // dL/dŷ = (2/n) * (ŷ - y)
+        return [](const Tensor& y_hat, const Tensor& y_true) {
+            Tensor diff = y_hat - y_true;
+            double scale = 2.0 / static_cast<double>(y_hat.rows());
+            return diff * scale;
+        };
     }
+
+    if (lossType == "MAE") {
+        // dL/dŷ = sign(ŷ - y) / n
+        return [](const Tensor& y_hat, const Tensor& y_true) {
+            Tensor diff = y_hat - y_true;
+            Tensor sign = diff.sign();  // assumes Tensor::sign() exists
+            double scale = 1.0 / static_cast<double>(y_hat.rows());
+            return sign * scale;
+        };
+    }
+
+    if (lossType == "Hinge") {
+        // dL/dŷ = -y if (1 - y*ŷ) > 0 else 0
+        return [](const Tensor& y_hat, const Tensor& y_true) {
+            Tensor margin = Tensor::Ones(y_true.rows(), y_true.cols()) - y_true.cwiseProduct(y_hat);
+            Tensor grad = Tensor::ZeroLike(y_hat);
+            for (int i = 0; i < grad.rows(); ++i)
+                for (int j = 0; j < grad.cols(); ++j)
+                    grad.data(i, j) = (margin.data(i, j) > 0.0) ? -y_true.data(i, j) : 0.0;
+            return grad;
+        };
+    }
+
+    if (lossType == "NLL") {
+        // dL/dŷ = -1 / ŷ
+        return [](const Tensor& y_hat, const Tensor& /*y_true*/) {
+            Tensor grad = Tensor::ZeroLike(y_hat);
+            grad.data = (-1.0 * y_hat.data.array().inverse()).matrix();
+            return grad;
+        };
+    }
+
+    if (lossType == "cos") {
+        // dL/dŷ = derivative of cosine similarity loss L = 1 - (ŷ·y)/(||ŷ|| ||y||)
+        return [](const Tensor& y_hat, const Tensor& y_true) {
+            double dot = (y_hat.data.cwiseProduct(y_true.data)).sum();
+            double norm_yhat = y_hat.data.norm();
+            double norm_ytrue = y_true.data.norm();
+            Tensor term1 = y_hat * (-dot / (norm_yhat * norm_yhat * norm_ytrue));
+            Tensor term2 = y_true * (-1.0 / (norm_yhat * norm_ytrue));
+            return term1 + term2;
+        };
+    }
+
+    throw invalid_argument("Unknown loss type: " + lossType);
 }
-
-
