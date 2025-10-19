@@ -1,17 +1,26 @@
 // Learning Rates
 
-double learningRateCaller(const string& type, double initialLR, VectorXd& accumulatedSquares, int epoch, double param) {
+#include <Eigen/Dense>
+#include <cmath>
+#include <stdexcept>
+#include <string>
+#include "lr.hpp"
+
+using namespace Eigen;
+using std::invalid_argument;
+using std::runtime_error;
+using std::string;
+
+double learningRateCaller(const string& type, VectorXd& accumulatedSquares, double initialLR, int epoch, double param) {
     if (type == "StepDecay") {
         return stepDecay(initialLR, 0.96, 20, epoch);
     } else if (type == "ExponentialDecay") {
         return exponentialDecay(initialLR, epoch, param);
     } else if (type == "InverseTimeDecay") {
         return InverseTimeDecay(initialLR, param, epoch);
-    } else if (type == "NR") {
-        MatrixXd H_inv = NewtonRaphson(hessian);
-        return H_inv;
     } else if (type == "AG") {
-        return AdaGrad(gradients, accumulatedSquares, initialLR, epoch);
+        // AdaGrad requires gradient; scheduling remains the same here
+        return initialLR;
     } else {
         return initialLR; // Default static learning rate
     }
@@ -21,20 +30,18 @@ double learningRateCaller(const string& type, double initialLR, VectorXd& accumu
 // k represents epochs.
 
 double stepDecay(double initialLR, double gamma, double t, double k) {
-    return initialLR * pow(gamma, floor(t / k));
+    return initialLR * std::pow(gamma, std::floor(t / k));
 }
 
 double exponentialDecay(double initialLR, int epoch, double decayRate) {
-    return initialLR * exp(-decayRate * epoch);
+    return initialLR * std::exp(-decayRate * epoch);
 }
 
 double InverseTimeDecay(double initialR, double gamma, double k) {
-    return initialR/(1 + gamma * k);
+    return initialR / (1 + gamma * k);
 }
 
-// Newton-Raphson decay (Newton's Method)
-// The learning rate "is" the inverse Hessian
-
+// Newton-Raphson helper: inverse Hessian
 MatrixXd NewtonRaphson(const MatrixXd& hessian) {
     if (hessian.rows() != hessian.cols()) {
         throw invalid_argument("Hessian must be square.");
@@ -51,10 +58,8 @@ MatrixXd NewtonRaphson(const MatrixXd& hessian) {
 VectorXd AdaGrad(const VectorXd& grad,
                  VectorXd& accumulatedSquares,
                  double initialLR,
-                 double epsilon = 1e-8) {
-    accumulatedSquares.array() += grad.data.array().square();
-
-    grad.data.array() /= (accumulatedSquares.array().sqrt() + 1e-8);
-    grad.data *= initialLR;
-    return grad;
+                 double epsilon) {
+    accumulatedSquares.array() += grad.array().square();
+    VectorXd adjusted = grad.array() / (accumulatedSquares.array().sqrt() + epsilon);
+    return initialLR * adjusted;
 }
