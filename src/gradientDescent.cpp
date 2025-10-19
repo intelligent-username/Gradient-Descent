@@ -48,6 +48,7 @@ Result gradientDescent(Tensor* w0,
 
                         string BatchMode,
                         const string& lossType,
+                        string learningRateType,
                         
                         double minGrad = 1e-3,
                         int maxEpochs = 2000,
@@ -82,6 +83,12 @@ Result gradientDescent(Tensor* w0,
     auto losses = getLossFunctions();
     auto loss = losses[lossType];
 
+    // Store the gradient of the loss functions
+    // Will always be used
+
+    
+
+
     bool running = true;
 
     while (running) {
@@ -115,13 +122,29 @@ Result gradientDescent(Tensor* w0,
         Tensor grad = X_batch.transpose() * (predictions - Tensor(y_batch.size(), 1)); // Placeholder for gradient logic
 
         // Update the weights (simple GD step)
-        double learningRate = 0.01; // Temporary constant learning rate
+
+        if learningRateType != "StepDecay" {
+            // Setting gamma to 0.96
+            // i.e. learning rate shrinks by 5% every 20 epochs.
+            // This is a hyperparameter that can be tuned
+
+            learningRate = stepDecay(learningRate, 0.96, 20, epoch);
+
+        } else if learningRateType != "ExponentialDecay" {
+            learningRate = 0.01; // Default static learning rate
+        } else if learningRateType != "NR" {
+            learningRate = NR(learningRate, epoch, 0.1);
+        }
+
+
+
+
         w = w - (grad * learningRate);
 
         // Update gradient magnitude for stopping condition
         curGrad = grad.norm();
 
-        // And update the stop condition trackers;
+        // And update the stop condition trackers
 
         // Now that I think about it, this process is very simple.
 
