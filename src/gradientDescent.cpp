@@ -1,3 +1,6 @@
+// Gradient Descent Algorithm
+// Implemented Beautifully
+
 #include <limits>
 #include <cmath>
 #include <map>
@@ -16,16 +19,11 @@
 using namespace Eigen;
 using namespace std;
 
-// Read batch mode string -> enum
 static BatchType parseBatchType(const std::string& s) {
     if (s == "FULL" || s == "Batch" || s == "BATCH") return BatchType::FULL;
     if (s == "STOCHASTIC" || s == "SGD") return BatchType::STOCHASTIC;
     return BatchType::MINI; // default
 }
-
-/**
-* Gradient Descent Algorithm
-*/
 
 /**
 *
@@ -118,9 +116,12 @@ Result gradientDescent(Tensor* w0,
     int batchSize = computeBatchSize(X_train.rows(), mode);
     batchSize = std::clamp(batchSize, 1, std::max(1, X_train.rows()));
 
-    // LR schedule state
-    double learningRate = 0.01; // initial
-    VectorXd accumulatedSquares = VectorXd::Zero(std::max(1, w.rows())); // kept for API compatibility
+    double baseLR = 0.01; // initial
+    double learningRate = baseLR;
+    VectorXd accumulatedSquares = VectorXd::Zero(w.rows()); // kept for API compatibility
+    // Adam moments
+    VectorXd m = VectorXd::Zero(w.rows());
+    VectorXd v = VectorXd::Zero(w.rows());
 
     // Loop state
     int epoch = 0;
@@ -168,14 +169,28 @@ Result gradientDescent(Tensor* w0,
         // dL/dŷ
         Tensor gradPred = gradFunc(predictions, y_true);
 
-        // ∂L/∂w = Xᵀ * dL/dŷ
-        Tensor grad = X_batch.transpose() * gradPred;
+    // ∂L/∂w = Xᵀ * dL/dŷ
+    Tensor grad = X_batch.transpose() * gradPred;
 
-        learningRate = learningRateCaller(learningRateType, accumulatedSquares, learningRate, epoch, 0.1);
-
-        // This is the only real step: update the weights.
-        // The rest is important but setup
-        w = w - (learningRate * grad);
+        // Update step based on optimizer selection
+        if (learningRateType == "Adam") {
+            // For stability on polynomial features, prefer smaller LR
+            if (epoch == 0 && iteration == 0) {
+                learningRate = 0.001; // reset for Adam on first iter
+            }
+            // Use implemented Adam from lr.cpp
+            VectorXd stepVec = Adam(grad.data.col(0), m, v,
+                                    0.9, 0.999, 1e-8,
+                                    learningRate, std::max(1, iteration));
+            Tensor step(stepVec.size(), 1);
+            step.data.col(0) = stepVec;
+            w = w - step; // Adam already scales by lr
+        } else {
+            // Update LR from schedule using the configured base learning rate
+            learningRate = learningRateCaller(learningRateType, accumulatedSquares, learningRate, epoch, baseLR);
+            // Standard SGD-style step
+            w = w - (learningRate * grad);
+        }
 
         // Update gradient magnitude for stopping
         curGrad = grad.norm();

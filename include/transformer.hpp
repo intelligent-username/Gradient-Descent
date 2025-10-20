@@ -34,4 +34,4 @@ public:
 // Automatically select degree based on dataset size
 int suggestPolynomialDegree(int n_samples, int n_features, int max_degree = 5);
 
-#endif // TRANSFORMER_HPP
+#endif

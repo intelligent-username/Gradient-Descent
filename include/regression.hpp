@@ -40,4 +40,4 @@ Result fitRegression(
     double minLoss = 0.0
 );
 
-#endif // REGRESSION_HPP
+#endif

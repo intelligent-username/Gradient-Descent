@@ -62,3 +62,55 @@ VectorXd AdaGrad(const VectorXd& grad,
     VectorXd adjusted = grad.array() / (accumulatedSquares.array().sqrt() + epsilon);
     return initialLR * adjusted;
 }
+
+// Adam optimizer
+VectorXd Adam(const VectorXd& grad,
+              VectorXd& m,
+              VectorXd& v,
+              double beta1,
+              double beta2,
+              double epsilon,
+              double lr,
+              int t)
+{
+    m = beta1 * m + (1.0 - beta1) * grad;
+    v = beta2 * v + (1.0 - beta2) * grad.array().square().matrix();
+    VectorXd m_hat = m / (1.0 - std::pow(beta1, t));
+    VectorXd v_hat = v / (1.0 - std::pow(beta2, t));
+    return lr * m_hat.array() / (v_hat.array().sqrt() + epsilon);
+}
+
+// Nadam optimizer
+VectorXd Nadam(const VectorXd& grad,
+               VectorXd& m,
+               VectorXd& v,
+               double beta1,
+               double beta2,
+               double epsilon,
+               double lr,
+               int t)
+{
+    m = beta1 * m + (1.0 - beta1) * grad;
+    v = beta2 * v + (1.0 - beta2) * grad.array().square().matrix();
+    VectorXd m_hat = (beta1 * m / (1.0 - std::pow(beta1, t))) + ((1.0 - beta1) * grad / (1.0 - std::pow(beta1, t)));
+    VectorXd v_hat = v / (1.0 - std::pow(beta2, t));
+    return lr * m_hat.array() / (v_hat.array().sqrt() + epsilon);
+}
+
+// AMSGrad optimizer
+VectorXd AMSGrad(const VectorXd& grad,
+                 VectorXd& m,
+                 VectorXd& v,
+                 VectorXd& v_hat,
+                 double beta1,
+                 double beta2,
+                 double epsilon,
+                 double lr,
+                 int t)
+{
+    m = beta1 * m + (1.0 - beta1) * grad;
+    v = beta2 * v + (1.0 - beta2) * grad.array().square().matrix();
+    v_hat = v_hat.array().max(v.array());
+    VectorXd m_hat = m / (1.0 - std::pow(beta1, t));
+    return lr * m_hat.array() / (v_hat.array().sqrt() + epsilon);
+}
