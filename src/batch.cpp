@@ -1,5 +1,9 @@
-// batch.cpp
+// Batching
+
 #include "batch.hpp"
+
+#include <algorithm>
+
 using namespace std;
 
 // Compute batch size dynamically based on mode

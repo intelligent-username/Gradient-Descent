@@ -25,6 +25,7 @@ target_include_directories(gradient_descent PUBLIC include)
 ## If using system Eigen, link if needed
 # target_link_libraries(gradient_descent Eigen3::Eigen)
 
-# Optionally you can add a demo executable later
-# add_executable(demo src/main.cpp)
-# target_link_libraries(demo gradient_descent)
+# Executables, but not for demos
+
+add_executable(first demos/first.cpp)
+target_link_libraries(first gradient_descent)

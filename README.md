@@ -4,7 +4,6 @@ In Progress
 
 TODO:
 
-- Finish implementations. Add all variants/optimizers, ensure universal functionality through main.
 - Add demos and visualizations FROM implementations.
 - Testing & validation.
 
@@ -26,7 +25,7 @@ TODO:
     - [Learning Rates](#learning-rates)
       - [1. Fixed](#1-fixed)
       - [2. Scheduled](#2-scheduled)
-      - [3. Adaptive](#3-adaptive)
+      - [3.Adaptive](#3adaptive)
         - [**Newton's Method**](#newtons-method)
         - [**Adagrad**](#adagrad)
         - [**RMSProp**](#rmsprop)
@@ -167,15 +166,15 @@ The above variations use the same update rule but change how the loss's gradient
 
 The learning rate, $\eta$, controls how big of a step we take in the direction of the negative gradient during each update. There are three main types of learning rates.
 
-#### <u>1. Fixed</u>
+#### 1. Fixed
 
 The simplest option is to set $\eta$ to some empirically-derived constant that seems to generally work well. However, this is not always optimal, as there is no real way to find an optimized universal learning rate. If the learning rate happens to be too high, the model will never converge, and, if it's too low, it will take too long. Often, experimenting with learning rates takes so much trial-and-error that it's not worth the effort.
 
-#### <u>2. Scheduled</u>
+#### 2. Scheduled
 
 Scheduled learning rates start with some initial learning rate $\eta_0$ and then decay it over time according to some schedule. Common schedules include:
 
-- **Step Decay**: Reduce the learning rate linearly by $\gamma \in (0,1)$ every $k$ epochs.
+- **Step Decay**: Reduce the learning rate by $\gamma \in (0,1)$ every $k$ epochs.
   
   $$
   \eta_k = \eta_0 \cdot \gamma^{\lfloor t / k \rfloor}
@@ -198,7 +197,7 @@ With $\lambda$ controlling the rate of decay.
 
 Scheduled rates/formulas also require empirical tuning for $\gamma$ and $\lambda$, but they are more consistent and convergent as loss functions tend to flatten out near a minimum anyway.
 
-#### 3. <u>Adaptive</u>
+#### 3.Adaptive
 
 These are the real optimizations. Adaptive learning rates adjust not just the learning rate but the learning method based on the current behaviour of the loss function's gradient. This means that, with a 'strange' enough loss surface, the learning rate can go down, then back up, etc. and continue oscillating until convergence is reached. Note that the notation I use isn't very 'canonical', as it is designed to make the math behind the implementation clearer. It is still correct.
 
@@ -236,7 +235,7 @@ Where
 - $\epsilon$ is a constant to prevent division by zero (or reduce the impact of gradients).
 - $\eta_0$ is the initial learning rate.
 
-The only problem with Adagrad is that it increases monotonically, which can lead to the gradient shrinking too quickly and staying small permanently, thereby preventing further learning.
+The only problem with Adagrad is that it decreases monotonically, which can lead to the gradient shrinking too quickly and staying small permanently, thereby preventing further learning.
 
 ##### **RMSProp**
 
@@ -250,13 +249,13 @@ $$
 
 Where:
 
-* $v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2$, the exponentially weighted moving average of the squared gradients at iteration $t$. Note that $v_0 = 0$.
-* $g_t = \nabla_w L(w_t)$ is the gradient of the loss function with respect to the parameters $w$ at iteration $t$.
-* $\beta_2 \in [0,1)$ is the decay rate controlling how much history is retained; larger $\beta_2$ gives smoother averages.
-* $1 - \beta_2$ is the weighting applied to the current squared gradient $g_t^2$.
-* $\eta_0$ is the initial learning rate (scalar hyperparameter set by the user).
-* $\epsilon$ is a small constant added to the denominator to prevent division by zero or extremely small step sizes.
-* $\eta_{t+1}$ is the effective per-parameter learning rate applied at iteration $t+1$.
+- $v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2$, the exponentially weighted moving average of the squared gradients at iteration $t$. Note that $v_0 = 0$.
+- $g_t = \nabla_w L(w_t)$ is the gradient of the loss function with respect to the parameters $w$ at iteration $t$.
+- $\beta_2 \in [0,1)$ is the decay rate controlling how much history is retained; larger $\beta_2$ gives smoother averages.
+- $1 - \beta_2$ is the weighting applied to the current squared gradient $g_t^2$.
+- $\eta_0$ is the initial learning rate (scalar hyperparameter set by the user).
+- $\epsilon$ is a small constant added to the denominator to prevent division by zero or extremely small step sizes.
+- $\eta_{t+1}$ is the effective per-parameter learning rate applied at iteration $t+1$.
 
 ##### **Adam**
 
@@ -316,18 +315,18 @@ $$
 
 Where:
 
-* $\hat{m}_t^{\text{Nesterov}} = \frac{\beta_1 \hat{m}_{t-1} + (1 - \beta_1) g_t}{1 - \beta_1^t}$
-* $\hat{v}_t = \frac{v_t}{1 - \beta_2^t}$ is the bias-corrected second moment, with $v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2$.
-* $g_t = \nabla_w L(w_t)$ is the gradient of the loss function w.r.t. parameters at iteration $t$.
-* $m_{t-1}$ is the previous first-moment vector (momentum) initialized to zero at $t=0$.
-* $v_{t-1}$ is the previous second-moment vector (uncentered variance) initialized to zero at $t=0$.
-* $\beta_1 \in [0,1)$ is the decay rate controlling how much past momentum is retained.
-* $\beta_2 \in [0,1)$ is the decay rate controlling how much past squared gradients are retained.
-* $1 - \beta_1$ weights the current gradient contribution to momentum.
-* $1 - \beta_2$ weights the current squared gradient contribution to velocity.
-* $\eta_0$ is the initial learning rate.
-* $\epsilon$ is a small constant to prevent division by zero.
-* $w_{t+1}$ is the updated parameter vector applied at iteration $t+1$.
+- $\hat{m}_t^{\text{Nesterov}} = \frac{\beta_1 \hat{m}_{t-1} + (1 - \beta_1) g_t}{1 - \beta_1^t}$
+- $\hat{v}_t = \frac{v_t}{1 - \beta_2^t}$ is the bias-corrected second moment, with $v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2$.
+- $g_t = \nabla_w L(w_t)$ is the gradient of the loss function w.r.t. parameters at iteration $t$.
+- $m_{t-1}$ is the previous first-moment vector (momentum) initialized to zero at $t=0$.
+- $v_{t-1}$ is the previous second-moment vector (uncentered variance) initialized to zero at $t=0$.
+- $\beta_1 \in [0,1)$ is the decay rate controlling how much past momentum is retained.
+- $\beta_2 \in [0,1)$ is the decay rate controlling how much past squared gradients are retained.
+- $1 - \beta_1$ weights the current gradient contribution to momentum.
+- $1 - \beta_2$ weights the current squared gradient contribution to velocity.
+- $\eta_0$ is the initial learning rate.
+- $\epsilon$ is a small constant to prevent division by zero.
+- $w_{t+1}$ is the updated parameter vector applied at iteration $t+1$.
 
 ---
 
@@ -341,16 +340,16 @@ $$
 
 Where:
 
-* $\hat{m}*t = \frac{m_t}{1 - \beta_1^t}$ is the bias-corrected first moment, with $m_t = \beta_1 m*{t-1} + (1 - \beta_1) g_t$.
-* $v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2$ is the uncorrected second moment (same as Adam).
-* $\hat{v}*t^{\text{max}} = \max(\hat{v}*{t-1}^{\text{max}}, \hat{v}_t)$ ensures the denominator never decreases.
-* $g_t = \nabla_w L(w_t)$ is the gradient at iteration $t$.
-* $m_{t-1}$ and $v_{t-1}$ are previous first and second moments, initialized to zero at $t=0$.
-* $\beta_1, \beta_2 \in [0,1)$ are decay rates for first and second moments.
-* $1 - \beta_1$ and $1 - \beta_2$ weight the contributions of the current gradient and squared gradient.
-* $\eta_0$ is the initial learning rate.
-* $\epsilon$ prevents division by zero.
-* $w_{t+1}$ is the updated parameter vector at iteration $t+1$.
+- $\hat{m}_t = \frac{m_t}{1 - \beta_1^t}$ is the bias-corrected first moment, with $m_t = \beta_1 m_{t-1} + (1 - \beta_1) g_t$.
+- $v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2$ is the uncorrected second moment (same as Adam).
+- $\hat{v}_t^{\text{max}} = \max(\hat{v}_{t-1}^{\text{max}}, \hat{v}_t)$ ensures the denominator never decreases.
+- $g_t = \nabla_w L(w_t)$ is the gradient at iteration $t$.
+- $m_{t-1}$ and $v_{t-1}$ are previous first and second moments, initialized to zero at $t=0$.
+- $\beta_1, \beta_2 \in [0,1)$ are decay rates for first and second moments.
+- $1 - \beta_1$ and $1 - \beta_2$ weight the contributions of the current gradient and squared gradient.
+- $\eta_0$ is the initial learning rate.
+- $\epsilon$ prevents division by zero.
+- $w_{t+1}$ is the updated parameter vector at iteration $t+1$.
 
 ---
 
@@ -421,7 +420,7 @@ $$
 L'(w) = L(w) + \lambda \sum_{j=1}^{N}{w_j^2}
 $$
 
-The penalty of L2 Regularization is the sum of the squares of the parameters. Once again, this encourages smaller weights, and pushes the model to predict the median rather than the mean, which is more robust to outliers.
+The penalty of L2 Regularization is the sum of the squares of the parameters. Once again, this encourages smaller weights, and pushes the model to predict the mean rather than the median, which is more robust to outliers.
 
 Since the terms are squared, large terms grow quadratically, thus being the primary target when minimizing the loss. If all weights in the model are $<=1$, this may cause issues, as the contribution from each term will be even smaller when squared.
 
@@ -462,7 +461,7 @@ We want to stop when the model has converged. This can be expressed in a similar
 $$
 \begin{aligned}
 &||\nabla_w L(w_t)|| < \epsilon  &&\text{(gradient near zero)} \\
-&|L(w_t) - L(w_{t-1})| < \zeta  &&\text{(loss no longer improving)} \\
+&|(Lw_t) - L(w_{t-1})| < \zeta  &&\text{(loss no longer improving)} \\
 &||w_t - w_{t-1}|| < \delta  &&\text{(weights no longer changing)} \\
 &t \ge N &&\text{(max iterations reached)} \\
 &k \ge M &&\text{(max epochs reached)} \\
@@ -521,7 +520,7 @@ We may use any combination of these conditions. The first three ensure convergen
     ```
     or
     ```bash
-    cmake --build .  # cross-platform alternative
+    cmake --build .  # cross-platform
     ```
 
   5. Run the executable:

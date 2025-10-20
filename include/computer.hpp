@@ -3,6 +3,7 @@
 
 #include "tensor.hpp"
 #include <string>
+#include <functional>
 
 /**
  * Compute gradient application given a gradient Tensor and input points Tensor
@@ -17,7 +18,9 @@
  * @return Tensor Result of gradient application
  * @throws std::invalid_argument if tensor shapes are incompatible
  */
-Tensor computeGradient(const Tensor& gradient, const Tensor& points);
+Tensor computeGradient(const std::function<Tensor(const Tensor&, const Tensor&)>& gradFunc,
+                       const Tensor& predictions,
+                       const Tensor& targets);
 
 /**
  * Gradient finder for different loss functions
@@ -30,6 +33,6 @@ Tensor computeGradient(const Tensor& gradient, const Tensor& points);
  * @return Tensor A 1x1 tensor containing the gradient coefficient
  * @throws std::invalid_argument if loss type is unknown
  */
-Tensor gradientFinder(const std::string& lossType);
+std::function<Tensor(const Tensor&, const Tensor&)> gradientFinder(const std::string& lossType);
 
 #endif // COMPUTER_HPP

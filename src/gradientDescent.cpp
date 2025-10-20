@@ -1,21 +1,31 @@
+#include <limits>
+#include <cmath>
+#include <map>
+#include <algorithm>
+#include <stdexcept>
+#include <utility>
+#include <Eigen/Dense>
+
 #include "gradientDescent.hpp"
 #include "tensor.hpp"
 #include "losses.hpp"
 #include "batch.hpp"
+#include "computer.hpp"
+#include "lr.hpp"
 
 using namespace Eigen;
 using namespace std;
 
+// Read batch mode string -> enum
+static BatchType parseBatchType(const std::string& s) {
+    if (s == "FULL" || s == "Batch" || s == "BATCH") return BatchType::FULL;
+    if (s == "STOCHASTIC" || s == "SGD") return BatchType::STOCHASTIC;
+    return BatchType::MINI; // default
+}
+
 /**
 * Gradient Descent Algorithm
 */
-// Universal object to return
-
-struct Result {
-    Tensor weights;
-    double loss;
-    int epochs;
-};
 
 /**
 *
@@ -44,25 +54,34 @@ Output:
 Result gradientDescent(Tensor* w0,
                         const Tensor& X,
                         const vector<Tensor*>& y,
-
                         string BatchMode,
                         const string& lossType,
                         string learningRateType,
-                        
-                        double minGrad = 1e-3,
-                        int maxEpochs = 2000,
-                        int maxIterations = 2000,
-                        double lossDif = 1e-5,
-                        double minLoss = 1e-4)
+                        double minGrad,
+                        int maxEpochs,
+                        int maxIterations,
+                        double lossDif,
+                        double minLoss)
 {
-    // Initiate the actual data to train/on
+    // Initiate the actual data to train on
+    Result final{*w0, 0.0, 0};
 
-    Tensor w = *w0; 
+    // Working copy of weights
+    Tensor w = *w0;
 
+    // Train/Val/Test split
     int n = X.rows();
-    int trainEnd = n * 0.7;       // 70% training
-    int valEnd = n * 0.85;        // 15% validation
-    int testEnd = n;               // 15% test
+    if (n == 0) {
+        throw std::invalid_argument("X has zero rows");
+    }
+    int trainEnd = static_cast<int>(n * 0.7);
+    int valEnd   = static_cast<int>(n * 0.85);
+    int testEnd  = n;
+
+    // Ensure at least one training sample and non-decreasing boundaries
+    if (trainEnd == 0) trainEnd = 1;
+    if (valEnd < trainEnd) valEnd = trainEnd;
+    if (testEnd < valEnd) testEnd = valEnd;
 
     Tensor X_train = X.block(0, 0, trainEnd, X.cols());
     Tensor X_val   = X.block(trainEnd, 0, valEnd - trainEnd, X.cols());
@@ -72,60 +91,81 @@ Result gradientDescent(Tensor* w0,
     vector<Tensor*> y_val(y.begin() + trainEnd, y.begin() + valEnd);
     vector<Tensor*> y_test(y.begin() + valEnd, y.end());
 
-
-    int epoch = 0;
-    int iteration = 0;
-    double prevLoss = std::numeric_limits<double>::max();
-    double currLoss = 0.0;
-    double curGrad = std::numeric_limits<double>::max();
+    // Basic sanity checks (cheap, helpful for demos)
+    if (static_cast<int>(y.size()) != n) {
+        throw std::invalid_argument("y.size() must equal X.rows()");
+    }
+    if (X.cols() != w.rows()) {
+        throw std::invalid_argument("X.cols() must match w0->rows()");
+    }
 
     auto losses = getLossFunctions();
-    auto loss = losses[lossType];
+
+    auto it = losses.find(lossType);
+    if (it == losses.end()) {
+        throw std::invalid_argument("Unknown loss type: " + lossType);
+    }
+    auto loss = it->second;
 
     // Store the gradient of the loss functions
     // Will always be used
-
     auto gradFunc = gradientFinder(lossType);
-    // Valid args: ['MSE', 'MAE', 'Hinge', 'NLL', 'cos']
+    // So far, valid args are ['MSE', 'MAE', 'Hinge', 'NLL', 'cos']
+
+    // Batching
+    BatchType mode = parseBatchType(BatchMode);
+    int batchStart = 0;
+    int batchSize = computeBatchSize(X_train.rows(), mode);
+    batchSize = std::clamp(batchSize, 1, std::max(1, X_train.rows()));
+
+    // LR schedule state
+    double learningRate = 0.01; // initial
+    VectorXd accumulatedSquares = VectorXd::Zero(std::max(1, w.rows())); // kept for API compatibility
+
+    // Loop state
+    int epoch = 0;
+    int iteration = 0;
+    double prevLoss = numeric_limits<double>::infinity();
+    double currLoss = 0.0;
+    double curGrad = numeric_limits<double>::infinity();
+
+    double prevValLoss = numeric_limits<double>::infinity();
 
     bool running = true;
 
-    double learningRate = 0.01; // default
-    VectorXd accumulatedSquares = VectorXd::Zero(w.rows()); // Gradient accumulator for Ada, RMS, etc.
-
     while (running) {
-
-        /* Steps for each iteration:
-
-        1) Take the current weights
-        2) Find the 'term' for the current iteration
-                (Whether that be the gradient of loss with points substituted in, momentum
-                RMS/Adam/ADA, or otherwise)
-        3) Multiply it by the learning rate 
-           Whether its dyanmic, deterministic, etc.
-        4) Subtract the learning rate * the gradients from current weights
-        5) Check if the updated weights/conditions should trigger the stop
-        6) If they do, return. If not, continue iterating
-
+        /*
+        Steps for each iteration:
+        
+            1) Take the current weights
+            2) Find the 'term' for the current iteration
+                 (Whether that be the gradient of loss with points 
+                 substituted in, momentum RMS/Adam/ADA, or otherwise
+                 doesn't matter we're 'generalizing' the concept of
+                 learning rate schedules here)
+            3) Multiply it by the learning rate
+            4) Update step (current weights - (learning ratae * term))
+            5) Check stop conditions
+            6) If stop conditions are met, return, else keep looping
+        
+        
         */
         
-        // First pick out the batch
+        // Get batch
+        auto [X_batch, y_batch] = getBatch(X_train, y_train, mode, batchStart, batchSize);
 
-        Tensor X_batch = X_train; // Placeholder until batching implemented
-        vector<Tensor*> y_batch = y_train; // Placeholder
-
-        // Run it through the current weights
+        // Predictions
         Tensor predictions = X_batch * w;
 
-        // Compute loss
+        // Compute loss for current batch
         currLoss = loss(predictions, y_batch, w);
 
-        // Flatten y_batch into Tensor for arithmetic
-        Tensor y_true(y_batch.size(), 1);
-        for (size_t i = 0; i < y_batch.size(); ++i)
+        // Build y_true Tensor from y_batch
+        Tensor y_true(static_cast<int>(y_batch.size()), 1);
+        for (int i = 0; i < static_cast<int>(y_batch.size()); ++i)
             y_true.data(i, 0) = y_batch[i]->data(0, 0);
 
-        // dL/dŷ from precomputed gradient function
+        // dL/dŷ
         Tensor gradPred = gradFunc(predictions, y_true);
 
         // ∂L/∂w = Xᵀ * dL/dŷ
@@ -133,17 +173,34 @@ Result gradientDescent(Tensor* w0,
 
         learningRate = learningRateCaller(learningRateType, accumulatedSquares, learningRate, epoch, 0.1);
 
-        // This is the only real step, the rest is just setup
+        // This is the only real step: update the weights.
+        // The rest is important but setup
         w = w - (learningRate * grad);
 
-        // Update gradient magnitude for stopping condition
+        // Update gradient magnitude for stopping
         curGrad = grad.norm();
 
-        // Check the stopping conditions
+        // If we completed an epoch (batchStart wrapped around), do validation
+        if (batchStart == 0 && X_val.rows() > 0) {
+            Tensor valPred = X_val * w;
+            double valLoss = loss(valPred, y_val, w);
+            if (valLoss > prevValLoss) {
+                break;
+            }
+            prevValLoss = valLoss;
+            epoch++;
+        }
+
+        iteration++;
+
+        // Compute improvement BEFORE updating prevLoss
+        double improvement = std::fabs(currLoss - prevLoss);
+
+        // Stopping checks (every 10 iterations, full set; otherwise budget only)
         if (iteration % 10 == 0) {
             running = (
                 curGrad > minGrad &&
-                fabs(currLoss - prevLoss) > lossDif &&
+                improvement > lossDif &&
                 currLoss > minLoss &&
                 epoch < maxEpochs &&
                 iteration < maxIterations
@@ -154,14 +211,14 @@ Result gradientDescent(Tensor* w0,
                 iteration < maxIterations
             );
         }
-    
+
+        // Now update prevLoss for the next iteration
         prevLoss = currLoss;
-        iteration++;
-        if (iteration % 100 == 0) epoch++;
     }
 
-    Result final = {w, currLoss, epoch};
-    
+    final.weights = w;
+    final.loss = currLoss;
+    final.epochs = epoch;
     return final;
     // QED :)
 };

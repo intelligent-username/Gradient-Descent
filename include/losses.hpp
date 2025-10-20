@@ -1,8 +1,11 @@
 #pragma once
+
 #include "tensor.hpp"
 #include <vector>
 #include <string>
 #include <functional>
+#include <map>
+
 using namespace std;
 
 double mseLoss(const Tensor&, const vector<Tensor*>&, const Tensor&);

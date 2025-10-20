@@ -15,6 +15,18 @@ struct Result {
 
 /**
  * Gradient Descent Algorithm
+ * 
+ * NOTE: Remember to make the logic for validation & test sets.
+ * 
+ * @param w0 Initial weights (Tensor*)
+ * @param X Input data (Tensor)
+ * @param y Target outputs (vector<Tensor*>)
+ * @param mode Batch mode (Batch vs. MiniBatch vs. Stochastic)
+ * @param minGrad Minimum gradient for continuing iterations (default: 1e-3)
+ * @param maxEpochs Maximum number of epochs (default: 1000)
+ * @param lossDif Minimum difference before we conclude convergence (default: 1e-5)
+ * @param minLoss Minimum loss value for early stopping (default: 1e-4)
+ *
  *
  * Splits data into train/val/test, iterates updates with a selected loss and
  * learning rate schedule, and returns the final weights and stats.

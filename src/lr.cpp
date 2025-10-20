@@ -11,18 +11,17 @@ using std::invalid_argument;
 using std::runtime_error;
 using std::string;
 
-double learningRateCaller(const string& type, VectorXd& accumulatedSquares, double initialLR, int epoch, double param) {
+double learningRateCaller(const string& type, VectorXd& /*accumulatedSquares*/, double initialLR, int epoch, double param) {
     if (type == "StepDecay") {
-        return stepDecay(initialLR, 0.96, 20, epoch);
+        // step-decay: eta = eta0 * gamma^{floor(t/k)}, with t=epoch, k=20
+        return stepDecay(initialLR, 0.96, static_cast<double>(epoch), 20.0);
     } else if (type == "ExponentialDecay") {
         return exponentialDecay(initialLR, epoch, param);
     } else if (type == "InverseTimeDecay") {
-        return InverseTimeDecay(initialLR, param, epoch);
-    } else if (type == "AG") {
-        // AdaGrad requires gradient; scheduling remains the same here
-        return initialLR;
+        return InverseTimeDecay(initialLR, param, static_cast<double>(epoch));
     } else {
-        return initialLR; // Default static learning rate
+        // Unknown or "AG" for now: fall back to constant LR
+        return initialLR;
     }
 }
 
@@ -41,7 +40,7 @@ double InverseTimeDecay(double initialR, double gamma, double k) {
     return initialR / (1 + gamma * k);
 }
 
-// Newton-Raphson helper: inverse Hessian
+// Inverse Hessian helper
 MatrixXd NewtonRaphson(const MatrixXd& hessian) {
     if (hessian.rows() != hessian.cols()) {
         throw invalid_argument("Hessian must be square.");

@@ -49,10 +49,11 @@ function<Tensor(const Tensor&, const Tensor&)> gradientFinder(const string& loss
     }
 
     if (lossType == "NLL") {
-        // dL/dŷ = -1 / ŷ
-        return [](const Tensor& y_hat, const Tensor& /*y_true*/) {
-            Tensor grad = Tensor::ZeroLike(y_hat);
-            grad.data = (-1.0 * y_hat.data.array().inverse()).matrix();
+        // Binary cross-entropy from logits: dL/dŷ = sigmoid(ŷ) - y
+        return [](const Tensor& y_hat, const Tensor& y_true) {
+            Eigen::ArrayXXd p = 1.0 / (1.0 + (-y_hat.data.array()).exp());
+            Tensor grad(y_hat.rows(), y_hat.cols());
+            grad.data = (p - y_true.data.array()).matrix();
             return grad;
         };
     }

@@ -21,4 +21,5 @@ include/Eigen/test/
 # Misc C stuff
 CMakeCache.txt
 CMakeFiles/
+*.cmake
 
