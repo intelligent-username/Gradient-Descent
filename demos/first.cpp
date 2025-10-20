@@ -1,33 +1,41 @@
 // This one just has random, synthetic data.
 // Upcoming ones will use real data and compare to expected outputs
 
-#include <iostream>
+#include <cstdio>
 #include <random>
 #include <vector>
 #include <Eigen/Dense>
 #include "../include/gradientDescent.hpp"
 #include "../include/tensor.hpp"
 
+using namespace std;
+using namespace Eigen;
+
 int main() {
+
+    printf("--------------------\n");
+    printf("FIRST DEMO\n");
+    printf("--------------------\n");
+
     // Synthetic linear data: y = X w_true + noise
     const int n = 300;     // samples
     const int d = 3;       // features
 
-    Eigen::MatrixXd Xm = Eigen::MatrixXd::Random(n, d);
-    Eigen::VectorXd w_true(d);
+    MatrixXd Xm = MatrixXd::Random(n, d);
+    VectorXd w_true(d);
     w_true << 2.0, -3.0, 0.5;
 
-    Eigen::VectorXd yv = Xm * w_true;
-    yv.array() += 0.05 * Eigen::VectorXd::Random(n).array(); // small noise
+    VectorXd yv = Xm * w_true;
+    yv.array() += 0.05 * VectorXd::Random(n).array(); // small noise
 
     // Wrap in Tensor
     Tensor X(n, d); 
     X.data = Xm;
 
     // y as vector<Tensor*> with shape (1,1) each
-    std::vector<Tensor> y_storage; 
+    vector<Tensor> y_storage; 
     y_storage.reserve(n);
-    std::vector<Tensor*> y_ptrs;   
+    vector<Tensor*> y_ptrs;   
     y_ptrs.reserve(n);
     
     for (int i = 0; i < n; ++i) {
@@ -48,16 +56,19 @@ int main() {
         "MSE",       // lossType
         "constant",  // learningRateType (safer for first test)
         1e-6,        // minGrad
-        200,         // maxEpochs
+        800,         // maxEpochs
         2000,        // maxIterations
         1e-7,        // lossDif
         0.0          // minLoss
     );
 
-    std::cout << "Final loss: " << res.loss << "\n";
-    std::cout << "Epochs: " << res.epochs << "\n";
-    std::cout << "Learned weights:\n" << res.weights.data << "\n";
-    std::cout << "True weights:\n" << w_true << "\n";
-    
+    printf("Final loss: %.6f\n", res.loss);
+    printf("Epochs: %d\n", res.epochs);
+    printf("Learned weights:\n%.6f\n%.6f\n%.6f\n", 
+           res.weights.data(0), res.weights.data(1), res.weights.data(2));
+    printf("True weights:\n%.6f\n%.6f\n%.6f\n",
+           w_true(0), w_true(1), w_true(2));
+
+    printf("--------------------\n");
     return 0;
 }

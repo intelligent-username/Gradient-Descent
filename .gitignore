@@ -2,7 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
-include/Eigen/src/
+# include/Eigen/src/
 include/Eigen/test/
 
 # Settings etc.
@@ -18,8 +18,9 @@ include/Eigen/test/
 *.dll
 *.exe
 
-# Misc C stuff
+# Misc C & Cbuild stuff
 CMakeCache.txt
 CMakeFiles/
 *.cmake
-
+cmake_install.cmake
+Makefile

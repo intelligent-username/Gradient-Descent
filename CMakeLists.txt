@@ -7,11 +7,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-# Use vendored Eigen headers from include/ to avoid external dependency
-# If you prefer system Eigen, remove the next line and uncomment find_package below.
-# find_package(Eigen3 REQUIRED)
-# include_directories(${EIGEN3_INCLUDE_DIR})
-
 # Library
 add_library(gradient_descent STATIC
     src/tensor.cpp
@@ -20,12 +15,17 @@ add_library(gradient_descent STATIC
     src/lr.cpp
     src/computer.cpp
     src/batch.cpp
+    src/transformer.cpp
+    src/regression.cpp
 )
 target_include_directories(gradient_descent PUBLIC include)
-## If using system Eigen, link if needed
-# target_link_libraries(gradient_descent Eigen3::Eigen)
 
-# Executables, but not for demos
+# Executables
 
+# First demo
 add_executable(first demos/first.cpp)
 target_link_libraries(first gradient_descent)
+
+# Second demo
+add_executable(second demos/second.cpp)
+target_link_libraries(second gradient_descent)
