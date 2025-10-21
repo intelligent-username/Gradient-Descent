@@ -11,27 +11,47 @@ using std::invalid_argument;
 using std::runtime_error;
 using std::string;
 
-double learningRateCaller(const string& type, VectorXd& /*accumulatedSquares*/, double initialLR, int epoch, double param) {
-    if (type == "StepDecay") {
-        // step-decay: eta = eta0 * gamma^{floor(t/k)}, with t=epoch, k=20
-        return stepDecay(initialLR, 0.96, static_cast<double>(epoch), 20.0);
-    } else if (type == "ExponentialDecay") {
-        return exponentialDecay(initialLR, epoch, param);
-    } else if (type == "InverseTimeDecay") {
-        return InverseTimeDecay(initialLR, param, static_cast<double>(epoch));
-    } else if (type == "Adam") {
-        return initialLR; // Adam handles its own LR scaling internally
+VectorXd learningRateCaller(const string& type,
+                           const VectorXd& grad,
+                           VectorXd& accumulatedSquares,
+                           VectorXd& m,
+                           VectorXd& v,
+                           VectorXd& v_hat,
+                           double& learningRate,
+                           int epoch,
+                           int iteration,
+                           double baseLR)
+{
+    if (type == "Adam") {
+        int t = iteration + 1;
+        return Adam(grad, m, v, 0.9, 0.999, 1e-8, learningRate, t);
     } else if (type == "Nadam") {
-        return initialLR; // Nadam handles its own LR scaling internally
+        int t = iteration + 1;
+        return Nadam(grad, m, v, 0.9, 0.999, 1e-8, learningRate, t);
     } else if (type == "AMSGrad") {
-        return initialLR; // AMSGrad handles its own LR scaling internally
-    } else {
-        // Unknown or constant: fall back to constant LR
-        return initialLR;
+        int t = iteration + 1;
+        return AMSGrad(grad, m, v, v_hat, 0.9, 0.999, 1e-8, learningRate, t);
+    } else if (type == "AdaGrad") {
+        return AdaGrad(grad, accumulatedSquares, learningRate, 1e-8);
     }
+
+    double scheduleParam = 0.0;
+    if (type == "ExponentialDecay") scheduleParam = 0.01;
+    if (type == "InverseTimeDecay") scheduleParam = 0.1;
+    if (type == "StepDecay") {
+        learningRate = stepDecay(baseLR, 0.96, static_cast<double>(epoch), 20.0);
+    } else if (type == "ExponentialDecay") {
+        learningRate = exponentialDecay(baseLR, epoch, scheduleParam);
+    } else if (type == "InverseTimeDecay") {
+        learningRate = InverseTimeDecay(baseLR, scheduleParam, static_cast<double>(epoch));
+    } else {
+        learningRate = baseLR;
+    }
+    return learningRate * grad;
 }
 
 // Made in order of appearance in the README
+// Some are neglected because I don't have 10 years to perrfect this project.
 // k represents epochs.
 
 double stepDecay(double initialLR, double gamma, double t, double k) {
@@ -60,6 +80,7 @@ MatrixXd NewtonRaphson(const MatrixXd& hessian) {
     return solver.solve(MatrixXd::Identity(hessian.rows(), hessian.cols()));
 }
 
+// AdaGrad
 VectorXd AdaGrad(const VectorXd& grad,
                  VectorXd& accumulatedSquares,
                  double initialLR,
@@ -86,7 +107,7 @@ VectorXd Adam(const VectorXd& grad,
     return lr * m_hat.array() / (v_hat.array().sqrt() + epsilon);
 }
 
-// Nadam optimizer
+// Nadam
 VectorXd Nadam(const VectorXd& grad,
                VectorXd& m,
                VectorXd& v,
@@ -103,7 +124,7 @@ VectorXd Nadam(const VectorXd& grad,
     return lr * m_hat.array() / (v_hat.array().sqrt() + epsilon);
 }
 
-// AMSGrad optimizer
+// AMSGrad
 VectorXd AMSGrad(const VectorXd& grad,
                  VectorXd& m,
                  VectorXd& v,
@@ -120,3 +141,4 @@ VectorXd AMSGrad(const VectorXd& grad,
     VectorXd m_hat = m / (1.0 - std::pow(beta1, t));
     return lr * m_hat.array() / (v_hat.array().sqrt() + epsilon);
 }
+

@@ -4,7 +4,7 @@ In Progress
 
 TODO:
 
-- Add demos and visualizations FROM implementations.
+- Add visual demos.
 - Testing & validation.
 
 ![Cover](cover.jpg)
@@ -474,7 +474,6 @@ Where $N$, is the maximum number of iterations, $M$ is the maximum number of epo
 
 We may use any combination of these conditions. The first three ensure convergence, while the last three prevent infinite loops and overfitting.
 
----
 
 ## Limitations
 
@@ -482,7 +481,6 @@ We may use any combination of these conditions. The first three ensure convergen
 - Difficult to maintain numerical stability with high-dimensional data.
 - The parameters may get stuck in local minima around the loss surface.
 
----
 
 ## Installation & Usage
 
@@ -527,7 +525,8 @@ cmake --build .  # cross-platform
   5. Run the executable:
 
 ```bash
-./gradient_descent
+./second # Or .\second.exe on Windows
+# Any other files compiled with CMake will end up in this folder and can be run similarly.
 ```
 
 Any other file that is modified or created, use the gradient descent algorithm, and be compiled and ran with the same steps. You may want to add to CMakeLists.txt, but that is unlikely unless you're changing the gradient descent implementation.
@@ -539,4 +538,4 @@ Side notes:
   
 ## License
 
-Distributed under the [MIT License](LICENSE). Feel free to clone (and star😇)
+Distributed under the [MIT License](LICENSE). Feel free to fork (and star😇)

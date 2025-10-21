@@ -20,7 +20,7 @@ int main() {
     const int n = 200;
     VectorXd x = VectorXd::LinSpaced(n, -3, 3);
     
-    // Generate y = 2 + 3x - 2x² + 0.5x³ + noise
+    // y = 2 + 3x - 2x² + 0.5x³ + noise
     VectorXd yv = 2 + 3*x.array() - 2*x.array().square() + 0.5*x.array().cube();
 
     unsigned int seed = static_cast<unsigned int>(chrono::system_clock::now().time_since_epoch().count());
@@ -42,20 +42,18 @@ int main() {
 
     Result res = fitRegression(
         X, y_ptrs,
-        RegressionType::POLYNOMIAL,       // regression type
-        3,                                // degree
-        "STOCHASTIC",                     // BatchMode
-        "MSE",                            // Loss
-        "Adam",                           // Optimization
-        1e-8,                             // Minimum gradient
-        2000,                              // Max epochs
-        20000,                             // Max iterations
-        1e-7,                             // Loss difference
-        0.0                               // Minimum loss (how 'accurate' we want it to current data)
+        RegressionType::POLYNOMIAL,         // regression type
+        3,                                  // degree
+        "STOCHASTIC",                       // BatchMode
+        "MSE",                              // Loss
+        "Adam",                             // Optimization
+        1e-8,                               // Minimum gradient
+        2000,                               // Max epochs
+        20000,                              // Max iterations
+        1e-7,                               // Loss difference
+        0.0                                 // Minimum loss (how 'accurate' we want it to current data)
     );
 
-    printf("\n\nStill need to tune functions & hyperparams.\n");
-    // Print true weights then learned weights
     printf("Final loss: %.6f\n", res.loss);
     printf("Epochs: %d\n", res.epochs);
     printf("True:   2, 3, -2, 0.5\n");

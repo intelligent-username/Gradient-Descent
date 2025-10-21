@@ -144,9 +144,10 @@ Result gradientDescent(Tensor* w0,
     double baseLR = 0.1; // initial
     double learningRate = baseLR;
     VectorXd accumulatedSquares = VectorXd::Zero(w.rows()); // kept for API compatibility
-    // Adam moments
+    // Adam/Nadam/AMSGrad moments
     VectorXd m = VectorXd::Zero(w.rows());
     VectorXd v = VectorXd::Zero(w.rows());
+    VectorXd v_hat = VectorXd::Zero(w.rows()); // for AMSGrad
 
     // Loop state
     int epoch = 0;
@@ -199,22 +200,23 @@ Result gradientDescent(Tensor* w0,
     // ∂L/∂w = Xᵀ * dL/dŷ
     Tensor grad = X_batch.transpose() * gradPred;
 
-        // Update step based on optimizer selection
-        if (learningRateType == "Adam") {
-            // Adam with persistent state and consistent per-iteration timestep
-            // Use t = iteration + 1 for correct bias correction at each step.
-            int t = iteration + 1;
-            VectorXd stepVec = Adam(grad.data.col(0), m, v,
-                                    0.9, 0.999, 1e-8,
-                                    learningRate, t);
+        // Update step based on optimizer selection (centralized in lr.cpp)
+        {
+            VectorXd stepVec = learningRateCaller(
+                learningRateType,
+                grad.data.col(0),
+                accumulatedSquares,
+                m,
+                v,
+                v_hat,
+                learningRate,
+                epoch,
+                iteration,
+                baseLR
+            );
             Tensor step(stepVec.size(), 1);
             step.data.col(0) = stepVec;
-            w = w - step; // Adam already scales by lr
-        } else {
-            // Update LR from schedule using the configured base learning rate
-            learningRate = learningRateCaller(learningRateType, accumulatedSquares, learningRate, epoch, baseLR);
-            // Standard SGD-style step
-            w = w - (learningRate * grad);
+            w = w - step;
         }
 
         // Update gradient magnitude for stopping
@@ -259,6 +261,8 @@ Result gradientDescent(Tensor* w0,
             
             running = (gradCondition && improvementCondition && lossCondition && epochCondition && iterationCondition);
             
+            // This is no longer necessary but here for future debugging
+
             // if (!running) {
             //     printf("\nTraining stopped at iteration %d, epoch %d:\n", iteration, epoch);
             //     printf("  curGrad=%.6e > minGrad=%.6e: %s\n", curGrad, minGrad, gradCondition ? "PASS" : "FAIL");
