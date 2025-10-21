@@ -13,8 +13,8 @@ using namespace Eigen;
 
 int main() {
 
-    printf("--------------------\n");
-    printf("FIRST DEMO\n");
+    printf("\n\n");
+    printf("FIRST DEMO: plane through 3D points\n");
     printf("--------------------\n");
 
     // Synthetic linear data: y = X w_true + noise
@@ -64,11 +64,8 @@ int main() {
 
     printf("Final loss: %.6f\n", res.loss);
     printf("Epochs: %d\n", res.epochs);
-    printf("Learned weights:\n%.6f\n%.6f\n%.6f\n", 
+    printf("True:    2, -3, 0.5\n");
+    printf("Learned: %.6f %.6f %.6f\n",
            res.weights.data(0), res.weights.data(1), res.weights.data(2));
-    printf("True weights:\n%.6f\n%.6f\n%.6f\n",
-           w_true(0), w_true(1), w_true(2));
 
-    printf("--------------------\n");
-    return 0;
 }

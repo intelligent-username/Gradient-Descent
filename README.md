@@ -9,8 +9,6 @@ TODO:
 
 ![Cover](cover.jpg)
 
----
-
 ## Outline
 
 - [Gradient Descent](#gradient-descent)
@@ -47,7 +45,6 @@ TODO:
     - [Environment Setup](#environment-setup)
   - [License](#license)
 
----
 
 ## Motivation
 
@@ -63,7 +60,6 @@ Finally, there is the most practical concern: computational efficiency. Even if 
 
 In this writeup, we will implement gradient descent from scratch and demonstrate it on regression problems, showing how iterative refinement can replace direct solutions in high‑dimensional, nonlinear cases.
 
----
 
 ## Math
 
@@ -83,7 +79,7 @@ Where:
 - $\nabla L(w_i)$ is the gradient of the loss function at $w_i$, indicating the direction of steepest ascent (by the Cauchy-Schwarz Theorem).
 - Subtracting the gradient moves us towards the minimum.
 
-This is the same as iterative minimization. We continue doing this until the change in loss, $\Delta L$ between iterations is smaller than some predefined threshold, the change in the gradient is below some threshold $\delta$, or until we run out of iterations. More formally, it is written with the condition:
+This is iterative minimization. We continue doing this until we're satisfied with the accuracy of the model. Specifically, we may check if the change in loss, $\Delta L$ between iterations is smaller than some predefined threshold or until we run out of iterations. More formally, it is written with the condition:
 
 $$
 |L(w_{i+1}) - L(w_i)| < \delta
@@ -97,23 +93,21 @@ $$
 i >= N
 $$
   
-(Where N is the maximum number of iterations, and $\epsilon$ and $\delta$ are small positive thresholds. Other conditions will be discussed [later](#stopping-conditions)).
+(Where $N$ is the maximum number of iterations, and $\epsilon$ and $\delta$ are small positive thresholds. Other conditions will be discussed [later](#stopping-conditions)).
 
-Thus, when changing these parameters around, the value of the learning rate and the method of calculating the loss gradient are the only things that are really tunable. The pause conditions are important but become less and less significant as they shrink to zero. It is important to intelligently pick a learning rate: too small and the model will be slow (and simply never get close enough to the minimum), too large and the model will diverge (overshoot the minimum and oscillate out of control). Later in this writeup, we will discuss the different methods for customizing all of these components.
+Thus, when changing these parameters around, the values of the initial hyperparameters and the methods used are the only things that are really tunable. The pause conditions are important but become less and less significant as they shrink to zero. It is important to intelligently pick a learning rate: too small and the model will be slow (and simply never get close enough to the minimum), too large and the model will diverge (overshoot the minimum and oscillate out of control). Later in this writeup, we will discuss the different methods for customizing all of these components.
 
 Note that, usually, it is not enough to simply perform gradient descent. We will likely need separate training, validation, and testing sets. Also, we will have to pass through the data multiple times (epochs) to get a good fit. Finally, we will often times have to regularize the model to prevent overfitting.
 
----
-
 ## Variants
 
-Now that we have the abstract gradient descent algorithm in general, we need to start implementing it specifically. There are three components that we need:
+Now that we understand gradient descent algorithm abstractly, we need to implement it specifically. There are three components that we need:
 
 1) A [loss function](https://github.com/intelligent-username/Loss-Functions) $L(\theta)$ to minimize
 2) A way to **compute** the gradient(s) $\nabla L(\theta)$, and
 3) A strategy for updating the parameters (i.e., the learning rate $\eta$)
 
-Today's topic will be the third components, as this is GD-specific.
+Today's topic will be the third components, as this is gradient descent-specific.
 
 ### Batch Gradient Descent (full dataset)
 
@@ -154,7 +148,6 @@ Mini-batch Gradient Descent is a compromise between Batch and Stochastic Gradien
 Mini-batch gradient descent introduces a new hyperparameter which can be tuned: the batch size. Call this batch size $s$, with $1 < s < m$.
 Each update will take $O(s)$ time, and create $O(m/s)$ updates per epoch. This is often the best balance between accuracy, speed, and generalization.
 
----
 
 ## Additional Techniques
 
@@ -436,8 +429,6 @@ With $\lambda \in [0, 1]$.
 
 We may also want to have two *separate* scalars, not necessairly within $[0,1]$ to make the regularization more extreme.
 
----
-
 ## Convergence Criteria
 
 Convergence occurs when the infimum or minimum  of the Loss function is very closely approached:
@@ -452,7 +443,6 @@ $$
 \forall \epsilon, \ \exists \delta, \zeta \ \ s.t. \ ||w_{t} - w_{t-1}|| < \delta \implies ||\nabla{L(W)_t}|| < \epsilon \ \lor \ |L(w_{t}) - L_(w_t-1)| < \zeta
 $$
 
----
 
 ## Stopping Conditions
 
@@ -495,48 +485,47 @@ We may use any combination of these conditions. The first three ensure convergen
 
   1. Clone the project:
 
-    ```bash
-    git clone <repository_url>
-    cd <repository_folder>
-    ````
+```bash
+git clone https://github.com/intelligent-username/Gradient-Descent
+cd Gradient-Descent
+```
 
   2. Create a build directory and enter it:
 
-    ```bash
-    mkdir build
-    cd build
-    ```
+```bash
+mkdir build
+cd build
+```
 
   3. Run CMake to configure the project:
 
-    ```bash
-    cmake ..
-    ```
+```bash
+cmake ..
+```
 
   4. Compile the project:
 
-    ```bash
-    make        # Linux/WSL/MinGW
-    ```
-    or
-    ```bash
-    cmake --build .  # cross-platform
-    ```
+```bash
+make        # Linux/WSL/MinGW
+```
+or
+```bash
+cmake --build .  # cross-platform
+```
 
   5. Run the executable:
 
-    ```bash
-    ./gradient_descent
-    ```
+```bash
+./gradient_descent
+```
+
+Any other file that is modified or created, use the gradient descent algorithm, and be compiled and ran with the same steps. You may want to add to CMakeLists.txt, but that is unlikely unless you're changing the gradient descent implementation.
 
 Side notes:
 
-- Eigen is included in `include/` and requires no separate installation.
+- Eigen is the math library, included in `include/`, without it, the operations would need to be implemented by hand and likely be less efficient anyway.
 - All source code is in `src/`, headers in `include/`.
-- Default settings use Adam optimizer with MSE loss. Other parameters can be adjusted in the code or via command-line arguments once implemented.
   
 ## License
 
-Distributed under the [MIT License](LICENSE).
-
----
+Distributed under the [MIT License](LICENSE). Feel free to clone (and star😇)

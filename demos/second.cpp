@@ -13,10 +13,9 @@ using namespace std;
 using namespace Eigen;
 
 int main() {
-    printf("--------------------\n");
+    printf("\n\n");
     printf("SECOND DEMO\n");
-    printf("--------------------\n");
-
+    printf("--------------------");
     const int n = 200;
     VectorXd x = VectorXd::LinSpaced(n, -3, 3);
     
@@ -41,25 +40,26 @@ int main() {
 
     Result res = fitRegression(
         X, y_ptrs,
-        RegressionType::POLYNOMIAL,
-        3,
-        "STOCHASTIC",
-        "MSE",
-        "Adam",
-        1e-6,
-        1000,
-        8000,
-        1e-7,
-        0.0
+        RegressionType::POLYNOMIAL,     // regression type
+        3,                              // degree
+        "STOCHASTIC",                   // BatchMode
+        "MSE",                          // Loss
+        "Adam",                         // Optimization
+        1e-3,                           // Initial learning rate
+        1000,                           // Max epochs
+        8000,                           // Max iterations
+        1e-7,                           // Loss difference
+        0.0                             // Minimum loss
     );
 
-    printf("currently, the results are COMPLETELY OFF, that's because I need to tweak the hyperparameters. DO THIS (later).\n");
+    printf("\n\nResults off. Tune functions & hyperparams.\n");
     // Print true weights then learned weights
+    printf("Final loss: %.6f\n", res.loss);
+    printf("Epochs: %d\n", res.epochs);
     printf("True:   2, 3, -2, 0.5\n");
     printf("Learned: %.6f %.6f %.6f %.6f\n", 
            res.weights.data(0), res.weights.data(1),
            res.weights.data(2), res.weights.data(3));
 
-    printf("--------------------\n");
     return 0;
 }

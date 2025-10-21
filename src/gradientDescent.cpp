@@ -176,7 +176,7 @@ Result gradientDescent(Tensor* w0,
         if (learningRateType == "Adam") {
             // For stability on polynomial features, prefer smaller LR
             if (epoch == 0 && iteration == 0) {
-                learningRate = 0.001; // reset for Adam on first iter
+                learningRate = baseLR; // reset for Adam on first iter
             }
             // Use implemented Adam from lr.cpp
             VectorXd stepVec = Adam(grad.data.col(0), m, v,
