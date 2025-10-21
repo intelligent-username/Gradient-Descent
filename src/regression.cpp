@@ -19,7 +19,6 @@ Result fitRegression(
     double lossDif,
     double minLoss)
 {
-    // Create appropriate transformer
     unique_ptr<Transformer> transformer;
     
     switch (type) {
@@ -32,16 +31,13 @@ Result fitRegression(
             break;
             
         case RegressionType::AUTO:
-            // Automatically determine best polynomial degree
             int auto_degree = suggestPolynomialDegree(X.rows(), X.cols(), degree);
             transformer = make_unique<PolynomialTransformer>(auto_degree);
             break;
     }
     
-    // Transform features
     Tensor X_transformed = transformer->transform(X);
     
-    // Initialize weights for the transformed feature space
     Tensor w0(X_transformed.cols(), 1);
     w0.data.setZero();
     

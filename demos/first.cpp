@@ -2,9 +2,11 @@
 // Upcoming ones will use real data and compare to expected outputs
 
 #include <cstdio>
+#include <cstdlib>
 #include <random>
 #include <vector>
 #include <Eigen/Dense>
+#include <chrono>
 #include "../include/gradientDescent.hpp"
 #include "../include/tensor.hpp"
 
@@ -20,6 +22,10 @@ int main() {
     // Synthetic linear data: y = X w_true + noise
     const int n = 300;     // samples
     const int d = 3;       // features
+    {
+        unsigned int seed = static_cast<unsigned int>(chrono::system_clock::now().time_since_epoch().count());
+        srand(seed);
+    }
 
     MatrixXd Xm = MatrixXd::Random(n, d);
     VectorXd w_true(d);

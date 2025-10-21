@@ -37,6 +37,7 @@ TODO:
       - [L1 Regularization (Lasso)](#l1-regularization-lasso)
       - [L2 Regularization (Ridge)](#l2-regularization-ridge)
       - [Elastic Net Regularization](#elastic-net-regularization)
+  - [Additional Hyperparameters/Techniques](#additional-hyperparameterstechniques)
   - [Convergence Criteria](#convergence-criteria)
   - [Stopping Conditions](#stopping-conditions)
   - [Limitations](#limitations)
@@ -428,6 +429,16 @@ Elastic regularization is literally the L1 and L2 regularization combined. It ad
 With $\lambda \in [0, 1]$.
 
 We may also want to have two *separate* scalars, not necessairly within $[0,1]$ to make the regularization more extreme.
+
+## Additional Hyperparameters/Techniques
+
+These are very helpful but underrated.
+
+- Patience: a term for seeing how many consecutive times the loss fails to improve before stopping early.
+- Initial learning rate
+- Rounding (T/F): Taking the ceiling or floor right before returning the final weights
+
+Whether or not to use these depends on the problem.
 
 ## Convergence Criteria
 

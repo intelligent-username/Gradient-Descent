@@ -19,8 +19,14 @@ double learningRateCaller(const string& type, VectorXd& /*accumulatedSquares*/, 
         return exponentialDecay(initialLR, epoch, param);
     } else if (type == "InverseTimeDecay") {
         return InverseTimeDecay(initialLR, param, static_cast<double>(epoch));
+    } else if (type == "Adam") {
+        return initialLR; // Adam handles its own LR scaling internally
+    } else if (type == "Nadam") {
+        return initialLR; // Nadam handles its own LR scaling internally
+    } else if (type == "AMSGrad") {
+        return initialLR; // AMSGrad handles its own LR scaling internally
     } else {
-        // Unknown or "AG" for now: fall back to constant LR
+        // Unknown or constant: fall back to constant LR
         return initialLR;
     }
 }

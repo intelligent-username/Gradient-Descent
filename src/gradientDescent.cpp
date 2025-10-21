@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <utility>
 #include <Eigen/Dense>
+#include <random>
 
 #include "gradientDescent.hpp"
 #include "tensor.hpp"
@@ -116,7 +117,31 @@ Result gradientDescent(Tensor* w0,
     int batchSize = computeBatchSize(X_train.rows(), mode);
     batchSize = std::clamp(batchSize, 1, std::max(1, X_train.rows()));
 
-    double baseLR = 0.01; // initial
+    // Prepare shuffled epoch copies for true stochastic/mini-batch behavior.
+    // We shuffle indices and permute X_train / y_train together at the start
+    // of training and after each epoch completes.
+    std::random_device rd;
+    std::mt19937 rng(rd());
+    Tensor X_epoch = X_train;
+    vector<Tensor*> y_epoch = y_train;
+    auto shuffle_epoch = [&](void) {
+        int m = X_train.rows();
+        vector<int> idx(m);
+        for (int i = 0; i < m; ++i) idx[i] = i;
+        std::shuffle(idx.begin(), idx.end(), rng);
+        Tensor X_tmp(m, X_train.cols());
+        for (int i = 0; i < m; ++i) {
+            X_tmp.data.row(i) = X_train.data.row(idx[i]);
+        }
+        X_epoch = X_tmp;
+        vector<Tensor*> y_tmp; y_tmp.reserve(m);
+        for (int i = 0; i < m; ++i) y_tmp.push_back(y_train[idx[i]]);
+        y_epoch.swap(y_tmp);
+    };
+    // Initial shuffle before training loop
+    shuffle_epoch();
+
+    double baseLR = 0.1; // initial
     double learningRate = baseLR;
     VectorXd accumulatedSquares = VectorXd::Zero(w.rows()); // kept for API compatibility
     // Adam moments
@@ -131,6 +156,8 @@ Result gradientDescent(Tensor* w0,
     double curGrad = numeric_limits<double>::infinity();
 
     double prevValLoss = numeric_limits<double>::infinity();
+    int patience = 10;
+    int patienceCounter = 0;
 
     bool running = true;
 
@@ -152,8 +179,8 @@ Result gradientDescent(Tensor* w0,
         
         */
         
-        // Get batch
-        auto [X_batch, y_batch] = getBatch(X_train, y_train, mode, batchStart, batchSize);
+    // Get batch (from shuffled epoch data)
+    auto [X_batch, y_batch] = getBatch(X_epoch, y_epoch, mode, batchStart, batchSize);
 
         // Predictions
         Tensor predictions = X_batch * w;
@@ -174,14 +201,12 @@ Result gradientDescent(Tensor* w0,
 
         // Update step based on optimizer selection
         if (learningRateType == "Adam") {
-            // For stability on polynomial features, prefer smaller LR
-            if (epoch == 0 && iteration == 0) {
-                learningRate = baseLR; // reset for Adam on first iter
-            }
-            // Use implemented Adam from lr.cpp
+            // Adam with persistent state and consistent per-iteration timestep
+            // Use t = iteration + 1 for correct bias correction at each step.
+            int t = iteration + 1;
             VectorXd stepVec = Adam(grad.data.col(0), m, v,
                                     0.9, 0.999, 1e-8,
-                                    learningRate, std::max(1, iteration));
+                                    learningRate, t);
             Tensor step(stepVec.size(), 1);
             step.data.col(0) = stepVec;
             w = w - step; // Adam already scales by lr
@@ -200,26 +225,48 @@ Result gradientDescent(Tensor* w0,
             Tensor valPred = X_val * w;
             double valLoss = loss(valPred, y_val, w);
             if (valLoss > prevValLoss) {
-                break;
+                patienceCounter++;
+                // printf("Validation loss increased (patience %d/%d) at iteration %d, epoch %d:\n", 
+                //        patienceCounter, patience, iteration, epoch);
+                // printf("  valLoss=%.6e > prevValLoss=%.6e\n", valLoss, prevValLoss);
+                if (patienceCounter >= patience) {
+                    // printf("Training stopped due to %d consecutive validation loss increases\n", patience);
+                    break;
+                }
+            } else {
+                patienceCounter = 0; // reset counter on improvement
             }
             prevValLoss = valLoss;
             epoch++;
+            // printf("Epoch %d: learningRate = %.6e\n", epoch, learningRate);
+
+            // Prepare/shuffle data for the next epoch
+            shuffle_epoch();
         }
 
         iteration++;
 
         // Compute improvement BEFORE updating prevLoss
-        double improvement = std::fabs(currLoss - prevLoss);
+        double improvement = fabs(currLoss - prevLoss);
 
         // Stopping checks (every 10 iterations, full set; otherwise budget only)
         if (iteration % 10 == 0) {
-            running = (
-                curGrad > minGrad &&
-                improvement > lossDif &&
-                currLoss > minLoss &&
-                epoch < maxEpochs &&
-                iteration < maxIterations
-            );
+            bool gradCondition = curGrad > minGrad;
+            bool improvementCondition = improvement > lossDif;
+            bool lossCondition = currLoss > minLoss;
+            bool epochCondition = epoch < maxEpochs;
+            bool iterationCondition = iteration < maxIterations;
+            
+            running = (gradCondition && improvementCondition && lossCondition && epochCondition && iterationCondition);
+            
+            // if (!running) {
+            //     printf("\nTraining stopped at iteration %d, epoch %d:\n", iteration, epoch);
+            //     printf("  curGrad=%.6e > minGrad=%.6e: %s\n", curGrad, minGrad, gradCondition ? "PASS" : "FAIL");
+            //     printf("  improvement=%.6e > lossDif=%.6e: %s\n", improvement, lossDif, improvementCondition ? "PASS" : "FAIL");
+            //     printf("  currLoss=%.6e > minLoss=%.6e: %s\n", currLoss, minLoss, lossCondition ? "PASS" : "FAIL");
+            //     printf("  epoch=%d < maxEpochs=%d: %s\n", epoch, maxEpochs, epochCondition ? "PASS" : "FAIL");
+            //     printf("  iteration=%d < maxIterations=%d: %s\n", iteration, maxIterations, iterationCondition ? "PASS" : "FAIL");
+            // }
         } else {
             running = (
                 epoch < maxEpochs &&

@@ -11,6 +11,9 @@ using namespace Eigen;
 double stepDecay(double initialLR, double gamma, double t, double k);
 double exponentialDecay(double initialLR, int epoch, double decayRate);
 double InverseTimeDecay(double initialR, double gamma, double k);
+double Adam(double initialLR, int epoch, double param = 0.0);
+double Nadam(double initialLR, int epoch, double param = 0.0);
+double AMSGrad(double initialLR, int epoch, double param = 0.0);
 
 // Optimizer helpers
 MatrixXd NewtonRaphson(const MatrixXd& hessian);
