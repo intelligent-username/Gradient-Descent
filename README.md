@@ -1,11 +1,6 @@
 # Gradient Descent
 
-In Progress
-
-TODO:
-
-- Add visual demos.
-- Testing & validation.
+<!-- Might still want to add visual demos & testing but this project has taken too long -->
 
 ![Cover](cover.jpg)
 
@@ -53,7 +48,7 @@ In Machine Learning, we often create functions for predicting labels on new data
 
 Today, we will be discussing Gradient Descent. Imagine we are trying to optimize some [**loss**](https://github.com/intelligent-username/Loss-Functions) function for a given set of data. Now, this can be done deterministically in a 'perfect' way in cases where a trivial analytical solution exists (for example, in the cases of [**linear regression**](https://github.com/intelligent-username/Linear-Regression) or even [**simple polynomial**](https://github.com/intelligent-username/Polynomial-Regression) regression). However, this has a few issues.
 
-Firstly, in polynomial regression, if we try to fit the graph with an extremly high degree polynomial, we will get near-perfect accuracy on the training data, but the produced model will collapse under slight deviations in new or unseen data. This is called overfitting. To prevent this, we use regularization techniques, which are more easily applied in the context of gradient descent.
+Firstly, in polynomial regression, if we try to fit the graph with an extremely high degree polynomial, we will get near-perfect accuracy on the training data, but the produced model will collapse under slight deviations in new or unseen data. This is called overfitting. To prevent this, we use regularization techniques, which are more easily applied in the context of gradient descent.
 
 Next, there may not *be* a straight-forward analytic solution. If the loss surface is high-dimensional and not convex, or if the loss surface isn't differentiable *everywhere*, there won't be a simple `.solve()` function that can find a solution. Gradient descent, which is inspired by Newton's method, can instead iteratively approximate a decent solution.
 
@@ -383,7 +378,7 @@ This is called overfitting. Regularization techniques add a penalty to the loss 
 
 For each type of regularization below, we will use a generic $L$ to refer to an un-regularized loss function, and $L'$ to refer to it's regularized version. Once again, keep in mind that $w$ denotes the weights and $\lambda$ being a constant that controls the *strength* of the given regularization. Thus, when performing gradient descent on a set of parameters $w$ with the set of data points $X$, we will instead differentiate and optimize $L'$.
 
-Although this topic would require a whole writeup of its own, it's important to at least understand how the loss functinos can be optimized and integrate the most relevant versions into this project.
+Although this topic would require a whole writeup of its own, it's important to at least understand how the loss functions can be optimized and integrate the most relevant versions into this project.
 
 #### L1 Regularization (Lasso)
 
@@ -428,7 +423,7 @@ Elastic regularization is literally the L1 and L2 regularization combined. It ad
 
 With $\lambda \in [0, 1]$.
 
-We may also want to have two *separate* scalars, not necessairly within $[0,1]$ to make the regularization more extreme.
+We may also want to have two *separate* scalars, not necessarily within $[0,1]$ to make the regularization more extreme.
 
 ## Additional Hyperparameters/Techniques
 
@@ -451,7 +446,7 @@ $$
 Or, more clearly:
 
 $$
-\forall \epsilon, \ \exists \delta, \zeta \ \ s.t. \ ||w_{t} - w_{t-1}|| < \delta \implies ||\nabla{L(W)_t}|| < \epsilon \ \lor \ |L(w_{t}) - L_(w_t-1)| < \zeta
+\forall \epsilon, \ \exists \delta, \zeta \ \ s.t. \ ||w_{t} - w_{t-1}|| < \delta \implies ||\nabla{L(W)_t}|| < \epsilon \ \lor \ |L(w_{t}) - L(w_{t-1})| < \zeta
 $$
 
 
@@ -477,7 +472,7 @@ We may use any combination of these conditions. The first three ensure convergen
 
 ## Limitations
 
-- The effectiveness of gradient desecent depends on hyperparameters, even with automatic tuning.
+- The effectiveness of gradient descent depends on hyperparameters, even with automatic tuning.
 - Difficult to maintain numerical stability with high-dimensional data.
 - The parameters may get stuck in local minima around the loss surface.
 
@@ -538,4 +533,4 @@ Side notes:
   
 ## License
 
-Distributed under the [MIT License](LICENSE). Feel free to fork (and star😇)
+Eigen is distributed under the [MPL2 License](https://eigen.tuxfamily.org/dox/GettingStarted.html#GettingStarted_License), datasets are from Kaggle (open source). This repository is distributed under the [MIT License](LICENSE). Feel free to fork (and star😇)
