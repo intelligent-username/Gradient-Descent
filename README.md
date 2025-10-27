@@ -331,9 +331,9 @@ $$
 
 Where:
 
-- $[\hat{m}_{t} = \frac{m_{t}}{1 - \beta_{1}^{t}}]$ is the first moment, - $m_{t} = \beta_{1} m_{t-1} + (1 - \beta_{1}) g_{t}$ is the bias correction.
+- $ ... \hat{m}_{t} = \frac{m_{t}}{1 - \beta_{1}^{t}}$ is the first moment, - $m_{t} = \beta_{1} m_{t-1} + (1 - \beta_{1}) g_{t}$ is the bias correction.
 - $v_{t} = \beta_{2} v_{t-1} + (1 - \beta_{2}) g_{t}^{2}$ is the uncorrected second moment (same as Adam).
-- The operation $[\hat{v}_{t}^{\max} = \max(\hat{v}_{t-1}^{\max}, \hat{v}_{t})]$ ensures the denominator never decreases.
+- The operation $ ... \hat{v}_{t}^{\max} = \max(\hat{v}_{t-1}^{\max}, \hat{v}_{t})$ ensures the denominator never decreases.
 - $g_t = \nabla_w L(w_t)$ is the gradient at iteration $t$.
 - $m_{t-1}$ and $v_{t-1}$ are previous first and second moments, initialized to zero at $t=0$.
 - $\beta_1, \beta_2 \in [0,1)$ are decay rates for first and second moments.
