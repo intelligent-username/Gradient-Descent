@@ -306,8 +306,8 @@ $$
 
 Where:
 
-- $\hat{m}_{t}^{\text{Nesterov}} = \frac{\beta_{1}\hat{m}_{t-1} + (1 - \beta_{1}) g_{t}}{1 - \beta_{1}^{t}}$
-- $\hat{v}_{t} = \frac{v_{t}}{1 - \beta_{2}^{t}}$ is the bias-corrected second moment, with $v_{t} = \beta_{2} v_{t-1} + (1 - \beta_{2}) g_{t}^{2}$.
+- &#8203;$\hat{m}_{t}^{\text{Nesterov}} = \frac{\beta_{1}\hat{m}_{t-1} + (1 - \beta_{1}) g_{t}}{1 - \beta_{1}^{t}}$
+- &#8203;$\hat{v}_{t} = \frac{v_{t}}{1 - \beta_{2}^{t}}$ is the bias-corrected second moment, with $v_{t} = \beta_{2} v_{t-1} + (1 - \beta_{2}) g_{t}^{2}$.
 - $g_{t} = \nabla_{w} L(w_{t})$ is the gradient of the loss function w.r.t. parameters at iteration $t$.
 - $m_{t-1}$ is the previous first-moment vector (momentum) initialized to zero at $t=0$.
 - $v_{t-1}$ is the previous second-moment vector (uncentered variance) initialized to zero at $t=0$.
@@ -331,14 +331,14 @@ $$
 
 Where:
 
-- $\hat{m}_{t} = \frac{m_{t}}{1 - \beta_{1}^{t}}$ is the bias-corrected first moment, with $m_{t} = \beta_{1} m_{t-1} + (1 - \beta_{1}) g_{t}$.
+- &#8203;$\hat{m}_{t} = \frac{m_{t}}{1 - \beta_{1}^{t}}$ is the bias-corrected first moment, with $m_{t} = \beta_{1} m_{t-1} + (1 - \beta_{1}) g_{t}$.
 - $v_{t} = \beta_{2} v_{t-1} + (1 - \beta_{2}) g_{t}^{2}$ is the uncorrected second moment (same as Adam).
-- $\hat{v}_{t}^{\max} = \max(\hat{v}_{t-1}^{\max}, \hat{v}_{t})$ ensures the denominator never decreases.
-- $g_t = \nabla_w L(w_t)$ is the gradient at iteration $t$.
+- &#8203;$\hat{v}_{t}^{\max} = \max(\hat{v}_{t-1}^{\max}, \hat{v}_{t})$ ensures the denominator never decreases.
+- $g_{t} = \nabla_{w} L(w_{t})$ is the gradient at iteration $t$.
 - $m_{t-1}$ and $v_{t-1}$ are previous first and second moments, initialized to zero at $t=0$.
-- $\beta_1, \beta_2 \in [0,1)$ are decay rates for first and second moments.
-- $1 - \beta_1$ and $1 - \beta_2$ weight the contributions of the current gradient and squared gradient.
-- $\eta_0$ is the initial learning rate.
+- $\beta_{1}, \beta_{2} \in [0,1)$ are decay rates for first and second moments.
+- $1 - \beta_{1}$ and $1 - \beta_{2}$ weight the contributions of the current gradient and squared gradient.
+- $\eta_{0}$ is the initial learning rate.
 - $\epsilon$ prevents division by zero.
 - $w_{t+1}$ is the updated parameter vector at iteration $t+1$.
 
