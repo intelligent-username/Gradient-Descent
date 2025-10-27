@@ -41,7 +41,6 @@
     - [Environment Setup](#environment-setup)
   - [License](#license)
 
-
 ## Motivation
 
 In Machine Learning, we often create functions for predicting labels on new data. Now, our main task here is the 'training' stage, i.e. finding the optimal parameters for our model. Of course, there are also the data collection & preparation, validation testing, and deployment stages, which in and of themselves are interesting, but they are not the topic for today.
@@ -55,7 +54,6 @@ Next, there may not *be* a straight-forward analytic solution. If the loss surfa
 Finally, there is the most practical concern: computational efficiency. Even if an analytic solution exists, it may be computationally expensive to compute directly. Consider the case where we have 10 dimensions and 3 million data points. The matrices involved in a direct solution could be humungous. Gradient descent, by contrast, can work with mini-batches of data and update parameters incrementally, making it more scalable for large datasets.
 
 In this writeup, we will implement gradient descent from scratch and demonstrate it on regression problems, showing how iterative refinement can replace direct solutions in high‑dimensional, nonlinear cases.
-
 
 ## Math
 
@@ -144,7 +142,6 @@ Mini-batch Gradient Descent is a compromise between Batch and Stochastic Gradien
 Mini-batch gradient descent introduces a new hyperparameter which can be tuned: the batch size. Call this batch size $s$, with $1 < s < m$.
 Each update will take $O(s)$ time, and create $O(m/s)$ updates per epoch. This is often the best balance between accuracy, speed, and generalization.
 
-
 ## Additional Techniques
 
 The above variations use the same update rule but change how the loss's gradient is calculated by changing the batch size. The following techniques change the update rule itself. They can be used in tandem with any of the above batch size strategies to create beautiful, hybrid algorithms.
@@ -165,24 +162,25 @@ Scheduled learning rates start with some initial learning rate $\eta_0$ and then
 
 - **Step Decay**: Reduce the learning rate by $\gamma \in (0,1)$ every $k$ epochs.
   
-  $$
-  \eta_k = \eta_0 \cdot \gamma^{\lfloor t / k \rfloor}
-  $$
+$$
+\eta_k = \eta_0 \cdot \gamma^{\lfloor t / k \rfloor}
+$$
 
 The constant $t$ sets the decay time scale.
 
 - **Exponential Decay**: Decay the learning rate exponentially.
 
-  $$
-  \eta_k = \eta_0 \cdot \gamma^{-\lambda k}
-  $$
+$$
+\eta_k = \eta_0 \cdot \gamma^{-\lambda k}
+$$
 
 With $\lambda$ controlling the rate of decay.
 
 - **Inverse Time Decay**: Decay the learning rate inversely proportionally to the epoch number.
-  $$
-  \eta_k = \frac{\eta_0}{1 + \gamma k}
-  $$
+
+$$
+\eta_k = \frac{\eta_0}{1 + \gamma k}
+$$
 
 Scheduled rates/formulas also require empirical tuning for $\gamma$ and $\lambda$, but they are more consistent and convergent as loss functions tend to flatten out near a minimum anyway.
 
@@ -251,7 +249,11 @@ Where:
 Adam's method is the culmination of all of these adjustment methods. It creates parameter-specific learning rates that are adapted based on the first and second moments of the gradients. It then makes use of our next technique, momentum, to smooth out the updates.
 
 $$
-\eta_{t+1} = (\eta_0) \cdot \frac{\hat{m}_{t,i}}{\sqrt{\hat{v}_t} + \epsilon}
+\eta_{t+1} = (\eta_0)
+\cdot
+\frac
+{\hat{m}_{t,i}}
+{\sqrt{\hat{v}_t} + \epsilon}
 $$
 
 Here, $m$ is the 'momentum' and $v$ is the 'velocity'. We multiply by the 'momentum' to move in the general direction of the change in gradients. Then, we divide by the 'velocity' in order to normalize the step size, scaling updates down for parameters with consistently large gradients and up for sparse or small-gradient parameters.
@@ -304,8 +306,8 @@ $$
 
 Where:
 
-- $\hat{m}_t^{\text{Nesterov}} = \frac{\beta_1 \hat{m}_{t-1} + (1 - \beta_1) g_t}{1 - \beta_1^t}$
-- $\hat{v}_t = \frac{v_t}{1 - \beta_2^t}$ is the bias-corrected second moment, with $v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2$.
+- $ \hat{m}_{t}^{\text{Nesterov}} = \frac{\beta_1 \hat{m}_{t-1} + (1 - \beta_1) g_t}{1 - \beta_1^t} $
+- $ \hat{v}_t = \frac{v_t}{1 - \beta_2^t} $ is the bias-corrected second moment, with $v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2$.
 - $g_t = \nabla_w L(w_t)$ is the gradient of the loss function w.r.t. parameters at iteration $t$.
 - $m_{t-1}$ is the previous first-moment vector (momentum) initialized to zero at $t=0$.
 - $v_{t-1}$ is the previous second-moment vector (uncentered variance) initialized to zero at $t=0$.
@@ -329,8 +331,8 @@ $$
 
 Where:
 
-- $\hat{m}_t = \frac{m_t}{1 - \beta_1^t}$ is the bias-corrected first moment, with $m_t = \beta_1 m_{t-1} + (1 - \beta_1) g_t$.
-- $v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2$ is the uncorrected second moment (same as Adam).
+- $\hat{m}_t$ = $\frac{m_t}{1 - \beta_1^t}$ is the bias-corrected first moment, with $m_t = \beta_1 m_{t-1} + (1 - \beta_1) g_t$.
+- $v_t$ = $\beta_2 v_{t-1} + (1 - \beta_2) g_t^2$ is the uncorrected second moment (same as Adam).
 - $\hat{v}_t^{\text{max}} = \max(\hat{v}_{t-1}^{\text{max}}, \hat{v}_t)$ ensures the denominator never decreases.
 - $g_t = \nabla_w L(w_t)$ is the gradient at iteration $t$.
 - $m_{t-1}$ and $v_{t-1}$ are previous first and second moments, initialized to zero at $t=0$.
@@ -449,7 +451,6 @@ $$
 \forall \epsilon, \ \exists \delta, \zeta \ \ s.t. \ ||w_{t} - w_{t-1}|| < \delta \implies ||\nabla{L(W)_t}|| < \epsilon \ \lor \ |L(w_{t}) - L(w_{t-1})| < \zeta
 $$
 
-
 ## Stopping Conditions
 
 We want to stop when the model has converged. This can be expressed in a similar way to the criteria above, with hyperparameters $\delta$, $\epsilon$, and $\zeta$. When running the algorithm, we can check if any of the following conditions are met::
@@ -469,13 +470,11 @@ Where $N$, is the maximum number of iterations, $M$ is the maximum number of epo
 
 We may use any combination of these conditions. The first three ensure convergence, while the last three prevent infinite loops and overfitting.
 
-
 ## Limitations
 
 - The effectiveness of gradient descent depends on hyperparameters, even with automatic tuning.
 - Difficult to maintain numerical stability with high-dimensional data.
 - The parameters may get stuck in local minima around the loss surface.
-
 
 ## Installation & Usage
 
@@ -487,42 +486,44 @@ We may use any combination of these conditions. The first three ensure convergen
 
 ### Environment Setup
 
-  1. Clone the project:
+1. Clone the project:
 
-```bash
-git clone https://github.com/intelligent-username/Gradient-Descent
-cd Gradient-Descent
-```
+    ```bash
+    git clone https://github.com/intelligent-username/Gradient-Descent
+    cd Gradient-Descent
+    ```
 
-  2. Create a build directory and enter it:
+2. Create a build directory and enter it:
 
-```bash
-mkdir build
-cd build
-```
+    ```bash
+    mkdir build
+    cd build
+    ```
 
-  3. Run CMake to configure the project:
+3. Run CMake to configure the project:
 
-```bash
-cmake ..
-```
+    ```bash
+    cmake ..
+    ```
 
-  4. Compile the project:
+4. Compile the project:
 
-```bash
-make        # Linux/WSL/MinGW
-```
-or
-```bash
-cmake --build .  # cross-platform
-```
+    ```bash
+    make        # Linux/WSL/MinGW
+    ```
 
-  5. Run the executable:
+    or
 
-```bash
-./second # Or .\second.exe on Windows
-# Any other files compiled with CMake will end up in this folder and can be run similarly.
-```
+    ```bash
+    cmake --build .  # cross-platform
+    ```
+
+5. Run the executable:
+
+    ```bash
+    ./second # Or .\second.exe on Windows
+    # Any other files compiled with CMake will end up in this folder and can be run similarly.
+    ```
 
 Any other file that is modified or created, use the gradient descent algorithm, and be compiled and ran with the same steps. You may want to add to CMakeLists.txt, but that is unlikely unless you're changing the gradient descent implementation.
 
