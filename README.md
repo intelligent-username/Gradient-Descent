@@ -331,7 +331,7 @@ $$
 
 Where:
 
-- $ \hat{m}_{t} = \frac{m_{t}}{1 - \beta_{1}^{t}}$ is the bias-corrected first moment, with $m_{t} = \beta_{1} m_{t-1} + (1 - \beta_{1}) g_{t}$.
+- $\,\hat{m}_{t} = \frac{m_{t}}{1 - \beta_{1}^{t}}$ is the bias-corrected first moment, with $m_{t} = \beta_{1} m_{t-1} + (1 - \beta_{1}) g_{t}$.
 - $v_{t} = \beta_{2} v_{t-1} + (1 - \beta_{2}) g_{t}^{2}$ is the uncorrected second moment (same as Adam).
 - $\hat{v}_{t}^{\max} = \max(\hat{v}_{t-1}^{\max}, \hat{v}_{t})$ ensures the denominator never decreases.
 - $g_t = \nabla_w L(w_t)$ is the gradient at iteration $t$.
