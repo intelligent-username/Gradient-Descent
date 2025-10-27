@@ -306,9 +306,9 @@ $$
 
 Where:
 
-- $ \hat{m}_{t}^{\text{Nesterov}} = \frac{\beta_1 \hat{m}_{t-1} + (1 - \beta_1) g_t}{1 - \beta_1^t} $
-- $ \hat{v}_t = \frac{v_t}{1 - \beta_2^t} $ is the bias-corrected second moment, with $v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2$.
-- $g_t = \nabla_w L(w_t)$ is the gradient of the loss function w.r.t. parameters at iteration $t$.
+- $\hat{m}_{t}^{\text{Nesterov}} = \frac{\beta_{1}\hat{m}_{t-1} + (1 - \beta_{1}) g_{t}}{1 - \beta_{1}^{t}}$
+- $\hat{v}_{t} = \frac{v_{t}}{1 - \beta_{2}^{t}}$ is the bias-corrected second moment, with $v_{t} = \beta_{2} v_{t-1} + (1 - \beta_{2}) g_{t}^{2}$.
+- $g_{t} = \nabla_{w} L(w_{t})$ is the gradient of the loss function w.r.t. parameters at iteration $t$.
 - $m_{t-1}$ is the previous first-moment vector (momentum) initialized to zero at $t=0$.
 - $v_{t-1}$ is the previous second-moment vector (uncentered variance) initialized to zero at $t=0$.
 - $\beta_1 \in [0,1)$ is the decay rate controlling how much past momentum is retained.
@@ -331,9 +331,9 @@ $$
 
 Where:
 
-- $\hat{m}_t = \frac{m_t}{1 - \beta_1^t}$ is the bias-corrected first moment, with $m_t = \beta_1 m_{t-1} + (1 - \beta_1) g_t$.
-- $v_t$ = $\beta_2 v_{t-1} + (1 - \beta_2) g_t^2$ is the uncorrected second moment (same as Adam).
-- $\hat{v}_t^{max} = \max(\hat{v}_{t-1}^{max}, \hat{v}_t)$ ensures the denominator never decreases.
+- $\hat{m}_{t} = \frac{m_{t}}{1 - \beta_{1}^{t}}$ is the bias-corrected first moment, with $m_{t} = \beta_{1} m_{t-1} + (1 - \beta_{1}) g_{t}$.
+- $v_{t} = \beta_{2} v_{t-1} + (1 - \beta_{2}) g_{t}^{2}$ is the uncorrected second moment (same as Adam).
+- $\hat{v}_{t}^{\max} = \max(\hat{v}_{t-1}^{\max}, \hat{v}_{t})$ ensures the denominator never decreases.
 - $g_t = \nabla_w L(w_t)$ is the gradient at iteration $t$.
 - $m_{t-1}$ and $v_{t-1}$ are previous first and second moments, initialized to zero at $t=0$.
 - $\beta_1, \beta_2 \in [0,1)$ are decay rates for first and second moments.
