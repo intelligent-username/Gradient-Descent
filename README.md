@@ -306,9 +306,10 @@ $$
 
 Where:
 
-- ${m}_{t}^{\text{Nesterov}} = \frac{\beta_{1}\hat{m}_{t-1} + (1 - \beta_{1}) g_{t}}{1 - \beta_{1}^{t}}$.
-- ${v}_{t} = \frac{v_{t}}{1 - \beta_{2}^{t}}$ is the bias-corrected second moment, with $v_{t} = \beta_{2} v_{t-1} + (1 - \beta_{2}) g_{t}^{2}$.
+- $\hat{m}_{t}^{\text{Nesterov}} = \frac{\beta_{1}\hat{m}_{t-1} + (1 - \beta_{1}) g_{t}}{1 - \beta_{1}^{t}}$.
+- $\hat{v}_{t} = \frac{v_{t}}{1 - \beta_{2}^{t}}$ is the bias-corrected second moment, with $v_{t} = \beta_{2} v_{t-1} + (1 - \beta_{2}) g_{t}^{2}$.
 - $g_{t} = \nabla_{w} L(w_{t})$ is the gradient of the loss function w.r.t. parameters at iteration $t$.
+
 - $m_{t-1}$ is the previous first-moment vector (momentum) initialized to zero at $t=0$.
 - $v_{t-1}$ is the previous second-moment vector (uncentered variance) initialized to zero at $t=0$.
 - $\beta_1 \in [0,1)$ is the decay rate controlling how much past momentum is retained.
