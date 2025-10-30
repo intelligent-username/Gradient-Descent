@@ -379,7 +379,7 @@ This is called overfitting. Regularization techniques add a penalty to the loss 
 
 For each type of regularization below, we will use a generic $L$ to refer to an un-regularized loss function, and $L'$ to refer to it's regularized version. Once again, keep in mind that $w$ denotes the weights and $\lambda$ being a constant that controls the *strength* of the given regularization. Thus, when performing gradient descent on a set of parameters $w$ with the set of data points $X$, we will instead differentiate and optimize $L'$.
 
-Although this topic would require a whole writeup of its own, it's important to at least understand how the loss functions can be optimized and integrate the most relevant versions into this project.
+Although this topic would require a whole writeup [of its own](https://github.com/intelligent-username/Regularization), it's important to at least understand how the loss functions can be optimized and integrate the most relevant versions into this project.
 
 #### L1 Regularization (Lasso)
 
